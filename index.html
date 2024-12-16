@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- ... Head and style sections remain the same ... -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,19 +7,70 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     <style>
-        /* ... Previous styles remain the same ... */
-        .debug-data {
-            background: #f0f0f0;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .column {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .column h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .bird-entry {
             padding: 10px;
-            margin-top: 5px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            font-size: 12px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .scientific-name {
+            font-size: smaller;
+            font-style: italic;
+            color: #666;
+            margin-top: 2px;
+        }
+        .bird-entry p {
+            margin: 5px 0;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        #timezone-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span> 1.9</h1>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"> 1.9 </span></h1>
     <div id="timezone-info">Showing times in Central Time</div>
     <div class="dashboard">
         <div class="column">
@@ -36,7 +86,6 @@
             <div id="twenty-four-hours"><p class="loading">Loading...</p></div>
         </div>
     </div>
-    <div id="debug-info"></div>
 
     <script>
         const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
@@ -58,87 +107,56 @@
             `;
         }
 
-        function updateDebugInfo(message, error = null, data = null) {
-            const debugDiv = document.getElementById('debug-info');
-            const timestamp = new Date().toISOString();
-            const errorInfo = error ? `\nError: ${error.message}\nStack: ${error.stack}` : '';
-            const dataInfo = data ? `\nData: ${JSON.stringify(data, null, 2)}` : '';
-            debugDiv.innerHTML += `
-                <div>
-                    [${timestamp}] ${message}${errorInfo}
-                    ${data ? `<div class="debug-data">${dataInfo}</div>` : ''}
-                </div>`;
-        }
-
-        function sortBirdsByTime(birds) {
-            if (!Array.isArray(birds)) {
-                updateDebugInfo('Warning: Received non-array data', null, birds);
-                // If it's an object with values we can use, convert to array
-                if (birds && typeof birds === 'object') {
-                    birds = Object.values(birds);
-                } else {
-                    return [];
-                }
+        function processApiResponse(data) {
+            // Check if data is already an array
+            if (Array.isArray(data)) {
+                return data;
             }
             
-            return birds.sort((a, b) => moment(b.dt).valueOf() - moment(a.dt).valueOf());
-        }
-
-        async function fetchWithTimeout(url, timeout = 5000) {
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeout);
-            
-            try {
-                const response = await fetch(url, {
-                    signal: controller.signal,
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                clearTimeout(id);
-                return response;
-            } catch (error) {
-                clearTimeout(id);
-                throw error;
+            // If data is an object with a detections property
+            if (data && data.detections) {
+                return data.detections;
             }
+
+            // If data is an object but not in the expected format
+            if (data && typeof data === 'object') {
+                return Object.values(data);
+            }
+
+            // If none of the above, return empty array
+            return [];
         }
 
-        async function fetchBirdData(hours) {
+        async function fetchBoxInfo() {
             try {
-                updateDebugInfo(`Fetching ${hours} hour data...`);
-                const response = await fetchWithTimeout(`${BASE_URL}/detections?hours=${hours}`);
+                const response = await fetch(BASE_URL);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
-                // Log the raw data for debugging
-                updateDebugInfo(`Raw ${hours} hour data received`, null, data);
-                
-                // Handle different response formats
-                let processedData;
-                if (Array.isArray(data)) {
-                    processedData = data;
-                } else if (data && typeof data === 'object') {
-                    // If it's an object, try to extract detections or other relevant data
-                    processedData = data.detections || data.birds || Object.values(data);
-                } else {
-                    processedData = [];
+                if (data.haikuboxName) {
+                    document.getElementById('dashboard-name').textContent = data.haikuboxName;
+                    document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
                 }
-                
-                updateDebugInfo(`Successfully processed ${hours} hour data`);
-                return sortBirdsByTime(processedData);
             } catch (error) {
-                updateDebugInfo(`Error fetching ${hours} hour data:`, error);
-                throw error;
+                console.error('Error fetching box info:', error);
             }
+        }
+
+        async function fetchBirdData(hours) {
+            const response = await fetch(`${BASE_URL}/detections?hours=${hours}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const processedData = processApiResponse(data);
+            
+            // Sort by detection time
+            return processedData.sort((a, b) => moment(b.dt).valueOf() - moment(a.dt).valueOf());
         }
 
         async function updateDashboard() {
             try {
-                updateDebugInfo('Starting dashboard update...');
-                
                 const tzOffset = moment().tz("America/Chicago").format('z');
                 document.getElementById('timezone-info').textContent = 
                     `Showing times in Central Time (${tzOffset})`;
@@ -161,15 +179,12 @@
                     twentyFourHourData.length ? twentyFourHourData.map(createBirdEntry).join('') 
                     : '<p>No birds spotted in the last 24 hours</p>';
 
-                updateDebugInfo('Dashboard update completed successfully');
-
             } catch (error) {
                 console.error('Error fetching bird data:', error);
                 const errorMessage = `
                     <p class="error">Error loading bird data. Please try again later.</p>
                     <p class="error-details">
                         Error details: ${error.message}<br>
-                        API URL: ${BASE_URL}<br>
                         Time: ${moment().tz("America/Chicago").format('YYYY-MM-DD HH:mm:ss z')}
                     </p>`;
                 document.querySelectorAll('.column > div').forEach(div => {
@@ -179,7 +194,210 @@
         }
 
         // Initial load
-        fetchBoxInfo().catch(console.error);
+        fetchBoxInfo();
+        updateDashboard();
+        
+        // Update dashboard every 5 minutes
+        setInterval(updateDashboard, 5 * 60 * 1000);
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Sightings Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .column {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .column h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .bird-entry {
+            padding: 10px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .scientific-name {
+            font-size: smaller;
+            font-style: italic;
+            color: #666;
+            margin-top: 2px;
+        }
+        .bird-entry p {
+            margin: 5px 0;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        #timezone-info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span></h1>
+    <div id="timezone-info">Showing times in Central Time</div>
+    <div class="dashboard">
+        <div class="column">
+            <h2>Last 4 Hours</h2>
+            <div id="four-hours"><p class="loading">Loading...</p></div>
+        </div>
+        <div class="column">
+            <h2>Last 12 Hours</h2>
+            <div id="twelve-hours"><p class="loading">Loading...</p></div>
+        </div>
+        <div class="column">
+            <h2>Last 24 Hours</h2>
+            <div id="twenty-four-hours"><p class="loading">Loading...</p></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
+        
+        function formatTimestamp(utcTimestamp) {
+            return moment.tz(utcTimestamp, "America/Chicago").format('MMM D, YYYY h:mm A z');
+        }
+
+        function createBirdEntry(bird) {
+            return `
+                <div class="bird-entry">
+                    <p>
+                        <strong>${bird.cn || 'Unknown Species'}</strong>
+                        <br>
+                        <span class="scientific-name">${bird.sn || 'Species name unavailable'}</span>
+                    </p>
+                    <p class="timestamp">Spotted: ${formatTimestamp(bird.dt)}</p>
+                </div>
+            `;
+        }
+
+        function processApiResponse(data) {
+            // Check if data is already an array
+            if (Array.isArray(data)) {
+                return data;
+            }
+            
+            // If data is an object with a detections property
+            if (data && data.detections) {
+                return data.detections;
+            }
+
+            // If data is an object but not in the expected format
+            if (data && typeof data === 'object') {
+                return Object.values(data);
+            }
+
+            // If none of the above, return empty array
+            return [];
+        }
+
+        async function fetchBoxInfo() {
+            try {
+                const response = await fetch(BASE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data.haikuboxName) {
+                    document.getElementById('dashboard-name').textContent = data.haikuboxName;
+                    document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
+                }
+            } catch (error) {
+                console.error('Error fetching box info:', error);
+            }
+        }
+
+        async function fetchBirdData(hours) {
+            const response = await fetch(`${BASE_URL}/detections?hours=${hours}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            const processedData = processApiResponse(data);
+            
+            // Sort by detection time
+            return processedData.sort((a, b) => moment(b.dt).valueOf() - moment(a.dt).valueOf());
+        }
+
+        async function updateDashboard() {
+            try {
+                const tzOffset = moment().tz("America/Chicago").format('z');
+                document.getElementById('timezone-info').textContent = 
+                    `Showing times in Central Time (${tzOffset})`;
+                
+                const [fourHourData, twelveHourData, twentyFourHourData] = await Promise.all([
+                    fetchBirdData(4),
+                    fetchBirdData(12),
+                    fetchBirdData(24)
+                ]);
+
+                document.getElementById('four-hours').innerHTML = 
+                    fourHourData.length ? fourHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 4 hours</p>';
+
+                document.getElementById('twelve-hours').innerHTML = 
+                    twelveHourData.length ? twelveHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 12 hours</p>';
+
+                document.getElementById('twenty-four-hours').innerHTML = 
+                    twentyFourHourData.length ? twentyFourHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 24 hours</p>';
+
+            } catch (error) {
+                console.error('Error fetching bird data:', error);
+                const errorMessage = `
+                    <p class="error">Error loading bird data. Please try again later.</p>
+                    <p class="error-details">
+                        Error details: ${error.message}<br>
+                        Time: ${moment().tz("America/Chicago").format('YYYY-MM-DD HH:mm:ss z')}
+                    </p>`;
+                document.querySelectorAll('.column > div').forEach(div => {
+                    div.innerHTML = errorMessage;
+                });
+            }
+        }
+
+        // Initial load
+        fetchBoxInfo();
         updateDashboard();
         
         // Update dashboard every 5 minutes
