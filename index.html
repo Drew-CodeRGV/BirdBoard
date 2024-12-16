@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bird Sightings Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .column {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .column h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .bird-entry {
+            padding: 10px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .bird-entry p {
+            margin: 5px 0;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard</h1>
+    <div class="dashboard">
+        <div class="column">
+            <h2>Last 4 Hours</h2>
+            <div id="four-hours"></div>
+        </div>
+        <div class="column">
+            <h2>Last 12 Hours</h2>
+            <div id="twelve-hours"></div>
+        </div>
+        <div class="column">
+            <h2>Last 36 Hours</h2>
+            <div id="thirty-six-hours"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
+        
+        function formatTimestamp(timestamp) {
+            return moment(timestamp).format('MMM D, YYYY h:mm A');
+        }
+
+        function createBirdEntry(bird) {
+            return `
+                <div class="bird-entry">
+                    <p><strong>${bird.species || 'Unknown Species'}</strong></p>
+                    <p class="timestamp">Spotted: ${formatTimestamp(bird.timestamp)}</p>
+                </div>
+            `;
+        }
+
+        function filterBirdsByTimeRange(birds, hours) {
+            const cutoffTime = moment().subtract(hours, 'hours');
+            return birds.filter(bird => moment(bird.timestamp).isAfter(cutoffTime));
+        }
+
+        function updateDashboard() {
+            fetch(API_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Assuming the API returns an array of bird sightings with timestamp and species
+                    const fourHourBirds = filterBirdsByTimeRange(data, 4);
+                    const twelveHourBirds = filterBirdsByTimeRange(data, 12);
+                    const thirtySixHourBirds = filterBirdsByTimeRange(data, 36);
+
+                    document.getElementById('four-hours').innerHTML = 
+                        fourHourBirds.length ? fourHourBirds.map(createBirdEntry).join('') 
+                        : '<p>No birds spotted in the last 4 hours</p>';
+
+                    document.getElementById('twelve-hours').innerHTML = 
+                        twelveHourBirds.length ? twelveHourBirds.map(createBirdEntry).join('') 
+                        : '<p>No birds spotted in the last 12 hours</p>';
+
+                    document.getElementById('thirty-six-hours').innerHTML = 
+                        thirtySixHourBirds.length ? thirtySixHourBirds.map(createBirdEntry).join('') 
+                        : '<p>No birds spotted in the last 36 hours</p>';
+                })
+                .catch(error => {
+                    console.error('Error fetching bird data:', error);
+                    document.querySelectorAll('.column > div').forEach(div => {
+                        div.innerHTML = '<p class="error">Error loading bird data. Please try again later.</p>';
+                    });
+                });
+        }
+
+        // Update dashboard immediately and then every 5 minutes
+        updateDashboard();
+        setInterval(updateDashboard, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
