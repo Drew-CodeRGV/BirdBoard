@@ -49,27 +49,32 @@
             text-align: center;
             padding: 20px;
         }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard v1.2</h1>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard v1.3</h1>
     <div class="dashboard">
         <div class="column">
             <h2>Last 4 Hours</h2>
-            <div id="four-hours"></div>
+            <div id="four-hours"><p class="loading">Loading...</p></div>
         </div>
         <div class="column">
             <h2>Last 12 Hours</h2>
-            <div id="twelve-hours"></div>
+            <div id="twelve-hours"><p class="loading">Loading...</p></div>
         </div>
         <div class="column">
             <h2>Last 36 Hours</h2>
-            <div id="thirty-six-hours"></div>
+            <div id="thirty-six-hours"><p class="loading">Loading...</p></div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://api.haikubox.com/haikubox/3485189D1828/';
+        const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
         
         function formatTimestamp(timestamp) {
             return moment(timestamp).format('MMM D, YYYY h:mm A');
@@ -89,38 +94,42 @@
             return birds.filter(bird => moment(bird.timestamp).isAfter(cutoffTime));
         }
 
-        function updateDashboard() {
-            fetch(API_URL)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // Assuming the API returns an array of bird sightings with timestamp and species
-                    const fourHourBirds = filterBirdsByTimeRange(data, 4);
-                    const twelveHourBirds = filterBirdsByTimeRange(data, 12);
-                    const thirtySixHourBirds = filterBirdsByTimeRange(data, 36);
+        async function fetchBirdData(hours) {
+            const response = await fetch(`${BASE_URL}/detections?hours=${hours}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        }
 
-                    document.getElementById('four-hours').innerHTML = 
-                        fourHourBirds.length ? fourHourBirds.map(createBirdEntry).join('') 
-                        : '<p>No birds spotted in the last 4 hours</p>';
+        async function updateDashboard() {
+            try {
+                // Fetch all time ranges in parallel
+                const [fourHourData, twelveHourData, thirtySixHourData] = await Promise.all([
+                    fetchBirdData(4),
+                    fetchBirdData(12),
+                    fetchBirdData(36)
+                ]);
 
-                    document.getElementById('twelve-hours').innerHTML = 
-                        twelveHourBirds.length ? twelveHourBirds.map(createBirdEntry).join('') 
-                        : '<p>No birds spotted in the last 12 hours</p>';
+                // Update the columns with the fetched data
+                document.getElementById('four-hours').innerHTML = 
+                    fourHourData.length ? fourHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 4 hours</p>';
 
-                    document.getElementById('thirty-six-hours').innerHTML = 
-                        thirtySixHourBirds.length ? thirtySixHourBirds.map(createBirdEntry).join('') 
-                        : '<p>No birds spotted in the last 36 hours</p>';
-                })
-                .catch(error => {
-                    console.error('Error fetching bird data:', error);
-                    document.querySelectorAll('.column > div').forEach(div => {
-                        div.innerHTML = '<p class="error">Error loading bird data. Please try again later.</p>';
-                    });
+                document.getElementById('twelve-hours').innerHTML = 
+                    twelveHourData.length ? twelveHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 12 hours</p>';
+
+                document.getElementById('thirty-six-hours').innerHTML = 
+                    thirtySixHourData.length ? thirtySixHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 36 hours</p>';
+
+            } catch (error) {
+                console.error('Error fetching bird data:', error);
+                document.querySelectorAll('.column > div').forEach(div => {
+                    div.innerHTML = '<p class="error">Error loading bird data. Please try again later.</p>';
                 });
+            }
         }
 
         // Update dashboard immediately and then every 5 minutes
