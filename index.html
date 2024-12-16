@@ -37,6 +37,12 @@
             border-radius: 4px;
             border-left: 4px solid #3498db;
         }
+        .scientific-name {
+            font-size: smaller;
+            font-style: italic;
+            color: #666;
+            margin-top: 2px;
+        }
         .bird-entry p {
             margin: 5px 0;
         }
@@ -54,10 +60,15 @@
             padding: 20px;
             color: #666;
         }
+        #box-name {
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard v1.3</h1>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span></h1>
     <div class="dashboard">
         <div class="column">
             <h2>Last 4 Hours</h2>
@@ -83,15 +94,30 @@
         function createBirdEntry(bird) {
             return `
                 <div class="bird-entry">
-                    <p><strong>${bird.species || 'Unknown Species'}</strong></p>
+                    <p>
+                        <strong>${bird.cn || 'Unknown Species'}</strong>
+                        <br>
+                        <span class="scientific-name">${bird.sn || 'Species name unavailable'}</span>
+                    </p>
                     <p class="timestamp">Spotted: ${formatTimestamp(bird.timestamp)}</p>
                 </div>
             `;
         }
 
-        function filterBirdsByTimeRange(birds, hours) {
-            const cutoffTime = moment().subtract(hours, 'hours');
-            return birds.filter(bird => moment(bird.timestamp).isAfter(cutoffTime));
+        async function fetchBoxInfo() {
+            try {
+                const response = await fetch(BASE_URL);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                if (data.haikuboxName) {
+                    document.getElementById('dashboard-name').textContent = data.haikuboxName;
+                    document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
+                }
+            } catch (error) {
+                console.error('Error fetching box info:', error);
+            }
         }
 
         async function fetchBirdData(hours) {
@@ -132,8 +158,11 @@
             }
         }
 
-        // Update dashboard immediately and then every 5 minutes
+        // Initial load
+        fetchBoxInfo();
         updateDashboard();
+        
+        // Update dashboard every 5 minutes
         setInterval(updateDashboard, 5 * 60 * 1000);
     </script>
 </body>
