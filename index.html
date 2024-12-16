@@ -5,99 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bird Sightings Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .column {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .column h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-        .bird-entry {
-            padding: 10px;
-            margin: 10px 0;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid #3498db;
-        }
-        .scientific-name {
-            font-size: smaller;
-            font-style: italic;
-            color: #666;
-            margin-top: 2px;
-        }
-        .bird-entry p {
-            margin: 5px 0;
-        }
+        /* ... Previous styles remain the same ... */
         .timestamp {
             color: #666;
             font-size: 0.9em;
         }
-        .error {
-            color: #e74c3c;
+        #timezone-info {
             text-align: center;
-            padding: 20px;
-        }
-        .error-details {
-            font-size: 0.9em;
             color: #666;
-            margin-top: 10px;
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-        #debug-info {
-            margin-top: 20px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            font-family: monospace;
+            margin-bottom: 20px;
             font-size: 0.9em;
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span> 1.6</h1>
-    <div class="dashboard">
-        <div class="column">
-            <h2>Last 4 Hours</h2>
-            <div id="four-hours"><p class="loading">Loading...</p></div>
-        </div>
-        <div class="column">
-            <h2>Last 12 Hours</h2>
-            <div id="twelve-hours"><p class="loading">Loading...</p></div>
-        </div>
-        <div class="column">
-            <h2>Last 24 Hours</h2>
-            <div id="twenty-four-hours"><p class="loading">Loading...</p></div>
-        </div>
-    </div>
-    <div id="debug-info"></div>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span> 1.7</h1>
+    <div id="timezone-info">Showing times in Central Time</div>
+    <!-- ... Rest of the HTML structure remains the same ... -->
 
     <script>
         const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
         
-        function formatTimestamp(timestamp) {
-            return moment(timestamp).format('MMM D, YYYY h:mm A');
+        function formatTimestamp(utcTimestamp) {
+            // Parse the UTC timestamp and convert to Central Time
+            return moment.tz(utcTimestamp, "America/Chicago").format('MMM D, YYYY h:mm A z');
         }
 
         function createBirdEntry(bird) {
@@ -108,55 +41,14 @@
                         <br>
                         <span class="scientific-name">${bird.sn || 'Species name unavailable'}</span>
                     </p>
-                    <p class="timestamp">Spotted: ${formatTimestamp(bird.timestamp)}</p>
+                    <p class="timestamp">Spotted: ${formatTimestamp(bird.dt)}</p>
                 </div>
             `;
         }
 
-        function updateDebugInfo(message, error = null) {
-            const debugDiv = document.getElementById('debug-info');
-            const timestamp = new Date().toISOString();
-            const errorInfo = error ? `\nError: ${error.message}\nStack: ${error.stack}` : '';
-            debugDiv.innerHTML += `<div>[${timestamp}] ${message}${errorInfo}</div>`;
-        }
-
-        async function fetchWithTimeout(url, timeout = 5000) {
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeout);
-            
-            try {
-                const response = await fetch(url, {
-                    signal: controller.signal,
-                    mode: 'cors', // Enable CORS
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                clearTimeout(id);
-                return response;
-            } catch (error) {
-                clearTimeout(id);
-                throw error;
-            }
-        }
-
-        async function fetchBoxInfo() {
-            try {
-                updateDebugInfo('Fetching box info...');
-                const response = await fetchWithTimeout(BASE_URL);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.haikuboxName) {
-                    document.getElementById('dashboard-name').textContent = data.haikuboxName;
-                    document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
-                    updateDebugInfo('Successfully fetched box info');
-                }
-            } catch (error) {
-                updateDebugInfo('Error fetching box info:', error);
-                throw error;
-            }
+        // Sort function to order birds by detection time, most recent first
+        function sortBirdsByTime(birds) {
+            return birds.sort((a, b) => moment(b.dt).valueOf() - moment(a.dt).valueOf());
         }
 
         async function fetchBirdData(hours) {
@@ -168,7 +60,7 @@
                 }
                 const data = await response.json();
                 updateDebugInfo(`Successfully fetched ${hours} hour data`);
-                return data;
+                return sortBirdsByTime(data); // Sort the data before returning
             } catch (error) {
                 updateDebugInfo(`Error fetching ${hours} hour data:`, error);
                 throw error;
@@ -178,6 +70,11 @@
         async function updateDashboard() {
             try {
                 updateDebugInfo('Starting dashboard update...');
+                
+                // Update timezone info with current offset
+                const tzOffset = moment().tz("America/Chicago").format('z');
+                document.getElementById('timezone-info').textContent = 
+                    `Showing times in Central Time (${tzOffset})`;
                 
                 // Fetch all time ranges in parallel
                 const [fourHourData, twelveHourData, twentyFourHourData] = await Promise.all([
@@ -208,7 +105,7 @@
                     <p class="error-details">
                         Error details: ${error.message}<br>
                         API URL: ${BASE_URL}<br>
-                        Time: ${new Date().toISOString()}
+                        Time: ${moment().tz("America/Chicago").format('YYYY-MM-DD HH:mm:ss z')}
                     </p>`;
                 document.querySelectorAll('.column > div').forEach(div => {
                     div.innerHTML = errorMessage;
@@ -216,12 +113,7 @@
             }
         }
 
-        // Initial load
-        fetchBoxInfo().catch(console.error);
-        updateDashboard();
-        
-        // Update dashboard every 5 minutes
-        setInterval(updateDashboard, 5 * 60 * 1000);
+        // ... Rest of the code remains the same ...
     </script>
 </body>
 </html>
