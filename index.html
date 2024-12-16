@@ -55,20 +55,28 @@
             text-align: center;
             padding: 20px;
         }
+        .error-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
         .loading {
             text-align: center;
             padding: 20px;
             color: #666;
         }
-        #box-name {
-            color: #2c3e50;
-            font-size: 1.2em;
-            margin-bottom: 20px;
+        #debug-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span></h1>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span> 1.5 </h1>
     <div class="dashboard">
         <div class="column">
             <h2>Last 4 Hours</h2>
@@ -83,6 +91,7 @@
             <div id="thirty-six-hours"><p class="loading">Loading...</p></div>
         </div>
     </div>
+    <div id="debug-info"></div>
 
     <script>
         const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
@@ -104,32 +113,72 @@
             `;
         }
 
+        function updateDebugInfo(message, error = null) {
+            const debugDiv = document.getElementById('debug-info');
+            const timestamp = new Date().toISOString();
+            const errorInfo = error ? `\nError: ${error.message}\nStack: ${error.stack}` : '';
+            debugDiv.innerHTML += `<div>[${timestamp}] ${message}${errorInfo}</div>`;
+        }
+
+        async function fetchWithTimeout(url, timeout = 5000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const response = await fetch(url, {
+                    signal: controller.signal,
+                    mode: 'cors', // Enable CORS
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+
         async function fetchBoxInfo() {
             try {
-                const response = await fetch(BASE_URL);
+                updateDebugInfo('Fetching box info...');
+                const response = await fetchWithTimeout(BASE_URL);
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
                 if (data.haikuboxName) {
                     document.getElementById('dashboard-name').textContent = data.haikuboxName;
                     document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
+                    updateDebugInfo('Successfully fetched box info');
                 }
             } catch (error) {
-                console.error('Error fetching box info:', error);
+                updateDebugInfo('Error fetching box info:', error);
+                throw error;
             }
         }
 
         async function fetchBirdData(hours) {
-            const response = await fetch(`${BASE_URL}/detections?hours=${hours}`);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            try {
+                updateDebugInfo(`Fetching ${hours} hour data...`);
+                const response = await fetchWithTimeout(`${BASE_URL}/detections?hours=${hours}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                updateDebugInfo(`Successfully fetched ${hours} hour data`);
+                return data;
+            } catch (error) {
+                updateDebugInfo(`Error fetching ${hours} hour data:`, error);
+                throw error;
             }
-            return response.json();
         }
 
         async function updateDashboard() {
             try {
+                updateDebugInfo('Starting dashboard update...');
+                
                 // Fetch all time ranges in parallel
                 const [fourHourData, twelveHourData, thirtySixHourData] = await Promise.all([
                     fetchBirdData(4),
@@ -150,16 +199,25 @@
                     thirtySixHourData.length ? thirtySixHourData.map(createBirdEntry).join('') 
                     : '<p>No birds spotted in the last 36 hours</p>';
 
+                updateDebugInfo('Dashboard update completed successfully');
+
             } catch (error) {
                 console.error('Error fetching bird data:', error);
+                const errorMessage = `
+                    <p class="error">Error loading bird data. Please try again later.</p>
+                    <p class="error-details">
+                        Error details: ${error.message}<br>
+                        API URL: ${BASE_URL}<br>
+                        Time: ${new Date().toISOString()}
+                    </p>`;
                 document.querySelectorAll('.column > div').forEach(div => {
-                    div.innerHTML = '<p class="error">Error loading bird data. Please try again later.</p>';
+                    div.innerHTML = errorMessage;
                 });
             }
         }
 
         // Initial load
-        fetchBoxInfo();
+        fetchBoxInfo().catch(console.error);
         updateDashboard();
         
         // Update dashboard every 5 minutes
