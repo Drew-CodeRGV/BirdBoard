@@ -76,7 +76,7 @@
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span> 1.5 </h1>
+    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span> 1.6</h1>
     <div class="dashboard">
         <div class="column">
             <h2>Last 4 Hours</h2>
@@ -87,8 +87,8 @@
             <div id="twelve-hours"><p class="loading">Loading...</p></div>
         </div>
         <div class="column">
-            <h2>Last 36 Hours</h2>
-            <div id="thirty-six-hours"><p class="loading">Loading...</p></div>
+            <h2>Last 24 Hours</h2>
+            <div id="twenty-four-hours"><p class="loading">Loading...</p></div>
         </div>
     </div>
     <div id="debug-info"></div>
@@ -180,10 +180,10 @@
                 updateDebugInfo('Starting dashboard update...');
                 
                 // Fetch all time ranges in parallel
-                const [fourHourData, twelveHourData, thirtySixHourData] = await Promise.all([
+                const [fourHourData, twelveHourData, twentyFourHourData] = await Promise.all([
                     fetchBirdData(4),
                     fetchBirdData(12),
-                    fetchBirdData(36)
+                    fetchBirdData(24)
                 ]);
 
                 // Update the columns with the fetched data
@@ -195,9 +195,9 @@
                     twelveHourData.length ? twelveHourData.map(createBirdEntry).join('') 
                     : '<p>No birds spotted in the last 12 hours</p>';
 
-                document.getElementById('thirty-six-hours').innerHTML = 
-                    thirtySixHourData.length ? thirtySixHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 36 hours</p>';
+                document.getElementById('twenty-four-hours').innerHTML = 
+                    twentyFourHourData.length ? twentyFourHourData.map(createBirdEntry).join('') 
+                    : '<p>No birds spotted in the last 24 hours</p>';
 
                 updateDebugInfo('Dashboard update completed successfully');
 
