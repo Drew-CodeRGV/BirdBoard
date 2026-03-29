@@ -88,14 +88,14 @@
     }
 
     /* Main */
-    main { padding: 28px 48px 60px; }
+    main { padding: 16px 48px 16px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .view { display: none; }
-    .view.active { display: block; }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
 
     .section-label {
       font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--green-light); margin-bottom: 20px;
-      display: flex; align-items: center; gap: 10px;
+      color: var(--green-light); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
     }
     .section-label::after { content:''; flex:1; height:1px; background:rgba(123,191,130,0.2); }
     .section-label .label-time {
@@ -111,11 +111,19 @@
     .spinner { width: 38px; height: 38px; border: 3px solid rgba(123,191,130,0.2); border-top-color: var(--green-light); border-radius: 50%; animation: spin 0.9s linear infinite; }
     @keyframes spin { to{transform:rotate(360deg);} }
 
-    /* Cards grid — 3 cols = 6 cards per page */
+    /* Cards grid — 3 cols = 6 cards per page, fills full vertical height */
+    .view.active {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 180px); /* subtract header + tabs + footer */
+    }
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+      grid-template-rows: repeat(2, 1fr);
+      gap: 16px;
+      flex: 1;
+      min-height: 0;
     }
 
     .bird-card {
@@ -123,13 +131,14 @@
       box-shadow: var(--shadow); display: flex; flex-direction: column;
       color: var(--text-dark); transition: transform 0.25s ease, box-shadow 0.25s ease;
       animation: cardIn 0.35s ease both;
+      min-height: 0;
     }
     @keyframes cardIn { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
     .bird-card:hover { transform: translateY(-3px); box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
     .bird-card.just-spotted { outline: 2px solid var(--amber); outline-offset: -1px; }
 
-    .card-image-wrap { position:relative; height:170px; overflow:hidden; background:var(--cream-dark); }
-    .card-image-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s ease; }
+    .card-image-wrap { position:relative; flex:1; min-height:0; overflow:hidden; background:var(--cream-dark); }
+    .card-image-wrap img { width:100%; height:100%; object-fit:cover; object-position: center 15%; display:block; transition:transform 0.5s ease; }
     .bird-card:hover .card-image-wrap img { transform:scale(1.04); }
     .img-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--green-mid); }
 
@@ -154,7 +163,7 @@
       padding:3px 9px;border-radius:20px;backdrop-filter:blur(4px);
     }
 
-    .card-body { padding:14px 16px 14px; flex:1; display:flex; flex-direction:column; gap:10px; }
+    .card-body { padding:10px 14px 12px; flex:0 0 auto; display:flex; flex-direction:column; gap:8px; }
     .bird-names .common { font-family:'Playfair Display',serif; font-size:1.08rem; font-weight:700; color:var(--green-deep); line-height:1.2; }
     .bird-names .scientific { font-size:0.73rem; color:var(--text-mid); font-style:italic; margin-top:2px; }
 
@@ -170,7 +179,7 @@
 
     .timeline-wrap { height:68px; position:relative; }
 
-    footer { text-align:center;padding:20px 48px;border-top:1px solid rgba(123,191,130,0.1);font-size:0.7rem;color:rgba(245,240,232,0.2);letter-spacing:0.04em; }
+    footer { text-align:center;padding:10px 48px;border-top:1px solid rgba(123,191,130,0.1);font-size:0.7rem;color:rgba(245,240,232,0.2);letter-spacing:0.04em;flex-shrink:0; }
 
     @media(max-width:900px){
       .cards-grid{grid-template-columns:repeat(2,1fr);}
