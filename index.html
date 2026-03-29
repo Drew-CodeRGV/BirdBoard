@@ -102,6 +102,9 @@
       font-family: 'DM Mono', monospace;
       color: rgba(245,240,232,0.3); font-size: 0.65rem; text-transform: none; letter-spacing: 0.04em;
     }
+    .slot-dots { display:flex; gap:5px; align-items:center; flex-shrink:0; }
+    .dot { width:6px; height:6px; border-radius:50%; background:rgba(123,191,130,0.3); transition:background 0.3s; }
+    .dot.active { background:var(--amber); }
 
     /* Loading */
     #loading-state {
@@ -417,27 +420,27 @@
     <span style="font-size:0.83rem;letter-spacing:0.06em;">Listening for birds…</span>
   </div>
 
-  <!-- View 0: Most recent 6 sightings -->
+  <!-- View 0: Most recent sightings -->
   <div class="view" id="view-0">
-    <div class="section-label">Most Recent Sightings <span class="label-time" id="label-0"></span></div>
+    <div class="section-label">Most Recent Sightings <span class="label-time" id="label-0"></span><span class="slot-dots" id="dots-0"></span></div>
     <div class="cards-grid" id="grid-0"></div>
   </div>
 
   <!-- View 1: Top birds last 1 hour -->
   <div class="view" id="view-1">
-    <div class="section-label">Most Seen · Last Hour <span class="label-time" id="label-1"></span></div>
+    <div class="section-label">Most Seen · Last Hour <span class="label-time" id="label-1"></span><span class="slot-dots" id="dots-1"></span></div>
     <div class="cards-grid" id="grid-1"></div>
   </div>
 
   <!-- View 2: Top birds last 6 hours -->
   <div class="view" id="view-2">
-    <div class="section-label">Most Seen · Last 6 Hours <span class="label-time" id="label-2"></span></div>
+    <div class="section-label">Most Seen · Last 6 Hours <span class="label-time" id="label-2"></span><span class="slot-dots" id="dots-2"></span></div>
     <div class="cards-grid" id="grid-2"></div>
   </div>
 
   <!-- View 3: Top birds last 24 hours -->
   <div class="view" id="view-3">
-    <div class="section-label">Most Seen · Last 24 Hours <span class="label-time" id="label-3"></span></div>
+    <div class="section-label">Most Seen · Last 24 Hours <span class="label-time" id="label-3"></span><span class="slot-dots" id="dots-3"></span></div>
     <div class="cards-grid" id="grid-3"></div>
   </div>
 </main>
@@ -447,19 +450,32 @@
 <script>
   /* ── Config ── */
   const BOX_ID = '3485189D1828';
-  const ROTATE_MS = 20000;
-  const REFRESH_MS = 300000;
-  function getPageSize() {
-    return (window.innerWidth <= 900 && window.innerHeight <= 900) ? 3 : 6;
-  }
+  const CARD_SLOT = 2;       // cards visible at once
+  const FLIP_MS  = 5000;     // ms each batch of cards shows
+  const REFRESH_MS = 300000; // 5 min data refresh
+  const NUM_VIEWS = 4;
 
   /* ── State ── */
-  let allDetections = [];   // raw from API (last 24h)
+  let allDetections = [];
+  let viewBirds = [[], [], [], []];  // pre-built card data per view
+  let viewHours  = [0, 1, 6, 24];   // hours window per view (0 = recent)
   let currentView = 0;
-  let rotateInterval, countdownInterval, rotateBarInterval;
-  let rotateBarStart = null;
+  let currentSlot = 0;               // which batch of 2 we're showing
+  let flipTimer = null;
+  let countdownInterval = null;
   let refreshCountdown = REFRESH_MS / 1000;
   const wikiCache = {};
+
+  /* ── Progress bar ── */
+  function animateBar(ms) {
+    const bar = document.getElementById('rotate-bar');
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      bar.style.transition = `width ${ms}ms linear`;
+      bar.style.width = '100%';
+    }));
+  }
 
   /* ── Countdown display ── */
   function startCountdown() {
@@ -474,43 +490,104 @@
     }, 1000);
   }
 
-  /* ── Rotate progress bar ── */
-  function startRotateBar() {
-    const bar = document.getElementById('rotate-bar');
-    clearInterval(rotateBarInterval);
-    bar.style.transition = 'none';
-    bar.style.width = '0%';
-    setTimeout(() => {
-      bar.style.transition = `width ${ROTATE_MS}ms linear`;
-      bar.style.width = '100%';
-    }, 30);
+  /* ── Master rotation engine ── */
+  // Each "tick" either flips to the next batch within the current view,
+  // or advances to the next view (starting at batch 0).
+  function startRotation() {
+    clearTimeout(flipTimer);
+    scheduleNextTick();
   }
 
-  /* ── Auto-rotate views ── */
-  function startRotate() {
-    clearInterval(rotateInterval);
-    startRotateBar();
-    rotateInterval = setInterval(() => {
-      currentView = (currentView + 1) % 4;
-      showView(currentView);
-      startRotateBar();
-    }, ROTATE_MS);
+  function scheduleNextTick() {
+    clearTimeout(flipTimer);
+    flipTimer = setTimeout(tick, FLIP_MS);
+    animateBar(FLIP_MS);
   }
 
-  function goToView(idx) {
+  function tick() {
+    const birds = viewBirds[currentView];
+    const totalSlots = Math.ceil(birds.length / CARD_SLOT);
+    const nextSlot = currentSlot + 1;
+
+    if (nextSlot < totalSlots) {
+      // More batches in this view — flip cards down
+      currentSlot = nextSlot;
+      flipCardsIn(currentView, currentSlot);
+    } else {
+      // Done with this view — move to next view
+      currentView = (currentView + 1) % NUM_VIEWS;
+      currentSlot = 0;
+      showView(currentView, true);
+    }
+    scheduleNextTick();
+  }
+
+  /* ── Show a view (switch tab, render first batch) ── */
+  function showView(idx, animate) {
     currentView = idx;
-    showView(idx);
-    startRotate(); // reset timer on manual tab click
-  }
-
-  function showView(idx) {
+    currentSlot = 0;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
     document.getElementById(`view-${idx}`).classList.add('active');
     document.getElementById(`tab-${idx}`).classList.add('active');
+    flipCardsIn(idx, 0, animate);
   }
 
-  /* ── Fetch data ── */
+  /* ── Render a batch of CARD_SLOT cards into the visible grid ── */
+  function flipCardsIn(viewIdx, slotIdx, animate) {
+    const grid = document.getElementById(`grid-${viewIdx}`);
+    const birds = viewBirds[viewIdx];
+    const start = slotIdx * CARD_SLOT;
+    const batch = birds.slice(start, start + CARD_SLOT);
+
+    // Flip out existing cards
+    const existing = grid.querySelectorAll('.bird-card');
+    existing.forEach((c, i) => {
+      c.style.transition = `transform 0.35s ${i * 0.06}s cubic-bezier(0.4,0,1,1), opacity 0.35s ${i * 0.06}s`;
+      c.style.transform = 'translateY(100%) scaleY(0.6)';
+      c.style.opacity = '0';
+    });
+
+    const delay = existing.length ? 380 : 0;
+    setTimeout(() => {
+      grid.innerHTML = '';
+      batch.forEach((cardEl, i) => {
+        const clone = cardEl.cloneNode(true);
+        clone.style.transform = 'translateY(40px)';
+        clone.style.opacity = '0';
+        clone.style.transition = 'none';
+        grid.appendChild(clone);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          clone.style.transition = `transform 0.4s ${i * 0.08}s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ${i * 0.08}s`;
+          clone.style.transform = 'translateY(0)';
+          clone.style.opacity = '1';
+        }));
+      });
+
+      // Update slot indicator dots
+      updateDots(viewIdx);
+    }, delay);
+  }
+
+  /* ── Slot indicator dots ── */
+  function updateDots(viewIdx) {
+    const birds = viewBirds[viewIdx];
+    const totalSlots = Math.ceil(birds.length / CARD_SLOT);
+    const dotsEl = document.getElementById(`dots-${viewIdx}`);
+    if (!dotsEl) return;
+    dotsEl.innerHTML = Array.from({length: totalSlots}, (_, i) =>
+      `<span class="dot${i === currentSlot ? ' active' : ''}"></span>`
+    ).join('');
+  }
+
+  /* ── Manual tab click ── */
+  function goToView(idx) {
+    clearTimeout(flipTimer);
+    showView(idx, true);
+    scheduleNextTick();
+  }
+
+  /* ── Fetch & build ── */
   async function fetchData() {
     try {
       const res = await fetch(`https://api.haikubox.com/haikubox/${BOX_ID}/detections?hours=24`);
@@ -519,62 +596,59 @@
       checkForNewBirds(allDetections);
       await buildAllViews();
       document.getElementById('loading-state').style.display = 'none';
-      showView(currentView);
-      startRotate();
+      showView(currentView, false);
+      startRotation();
       startCountdown();
     } catch(err) { console.error('Fetch error:', err); }
   }
 
-  /* ── Build all 4 views ── */
+  /* ── Build card DOM nodes for all views, store in viewBirds ── */
   async function buildAllViews() {
     const now = new Date();
-    const pageSize = getPageSize();
+    const MAX = 6; // fetch up to 6, show 2 at a time
 
     // View 0: most recent unique species
     const recentSeen = {};
-    const sorted = [...allDetections].sort((a,b) => b.dt - a.dt);
-    for (const d of sorted) {
-      if (!recentSeen[d.cn]) recentSeen[d.cn] = d;
-      if (Object.keys(recentSeen).length >= pageSize) break;
-    }
-    const recentBirds = Object.values(recentSeen).slice(0, pageSize);
-    document.getElementById('label-0').textContent = `· as of ${now.toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})}`;
-    await renderRecentGrid('grid-0', recentBirds);
+    [...allDetections].sort((a,b) => b.dt - a.dt).forEach(d => {
+      if (!recentSeen[d.cn] && Object.keys(recentSeen).length < MAX) recentSeen[d.cn] = d;
+    });
+    document.getElementById('label-0').textContent =
+      `· as of ${now.toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})}`;
+    viewBirds[0] = await buildRecentCards(Object.values(recentSeen));
 
+    // Views 1–3: top by count
     const windows = [1, 6, 24];
     for (let wi = 0; wi < windows.length; wi++) {
       const hours = windows[wi];
-      const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
+      const cutoff = new Date(now.getTime() - hours * 3600000);
       const grouped = groupBySpecies(allDetections.filter(d => d.dt >= cutoff));
       const top = Object.values(grouped)
         .sort((a,b) => b.timestamps.length - a.timestamps.length)
-        .slice(0, pageSize);
-      document.getElementById(`label-${wi+1}`).textContent = `· ${top.reduce((s,b)=>s+b.timestamps.length,0)} total sightings`;
-      await renderTopGrid(`grid-${wi+1}`, top, hours);
+        .slice(0, MAX);
+      document.getElementById(`label-${wi+1}`).textContent =
+        `· ${top.reduce((s,b)=>s+b.timestamps.length,0)} total sightings`;
+      viewBirds[wi+1] = await buildTopCards(top, hours);
     }
   }
 
   function groupBySpecies(detections) {
-    const grouped = {};
+    const g = {};
     for (const d of detections) {
-      if (!grouped[d.cn]) grouped[d.cn] = { cn: d.cn, sn: d.sn, timestamps: [] };
-      grouped[d.cn].timestamps.push(d.dt);
+      if (!g[d.cn]) g[d.cn] = { cn: d.cn, sn: d.sn, timestamps: [] };
+      g[d.cn].timestamps.push(d.dt);
     }
-    return grouped;
+    return g;
   }
 
-  /* ── Render view 0 (recent) ── */
-  async function renderRecentGrid(gridId, birds) {
-    const grid = document.getElementById(gridId);
-    grid.innerHTML = '';
+  async function buildRecentCards(birds) {
     const now = new Date();
+    const cards = [];
     for (let i = 0; i < birds.length; i++) {
       const d = birds[i];
       const justSpotted = (now - d.dt) < 30 * 60 * 1000;
       const imgUrl = await getWikiImage(d.sn);
       const card = document.createElement('div');
       card.className = 'bird-card' + (justSpotted ? ' just-spotted' : '');
-      card.style.animationDelay = `${i * 0.06}s`;
       card.innerHTML = `
         <div class="card-image-wrap">
           ${imgUrl ? `<img src="${imgUrl}" alt="${d.sn}" onerror="this.parentElement.innerHTML='<div class=img-placeholder>🐦</div>'">` : '<div class="img-placeholder">🐦</div>'}
@@ -586,22 +660,19 @@
             <div class="common">${d.cn}</div>
             <div class="scientific">${d.sn}</div>
           </div>
-          <div>
-            <div class="ts-label">Last Seen</div>
-            <ul class="ts-list">
-              <li>${d.dt.toLocaleString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true,month:'short',day:'numeric'})}</li>
-            </ul>
-          </div>
+          <div class="ts-label">Last Seen</div>
+          <ul class="ts-list">
+            <li>${d.dt.toLocaleString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true,month:'short',day:'numeric'})}</li>
+          </ul>
         </div>`;
-      grid.appendChild(card);
+      cards.push(card);
     }
+    return cards;
   }
 
-  /* ── Render views 1–3 (top by count) ── */
-  async function renderTopGrid(gridId, birds, hours) {
-    const grid = document.getElementById(gridId);
-    grid.innerHTML = '';
+  async function buildTopCards(birds, hours) {
     const maxCount = birds[0]?.timestamps.length || 1;
+    const cards = [];
     for (let i = 0; i < birds.length; i++) {
       const bird = birds[i];
       const sorted = [...bird.timestamps].sort((a,b) => b - a);
@@ -609,7 +680,6 @@
       const pct = Math.round((bird.timestamps.length / maxCount) * 100);
       const card = document.createElement('div');
       card.className = 'bird-card';
-      card.style.animationDelay = `${i * 0.06}s`;
       card.innerHTML = `
         <div class="card-image-wrap">
           ${imgUrl ? `<img src="${imgUrl}" alt="${bird.sn}" onerror="this.parentElement.innerHTML='<div class=img-placeholder>🐦</div>'">` : '<div class="img-placeholder">🐦</div>'}
@@ -621,22 +691,19 @@
             <div class="common">${bird.cn}</div>
             <div class="scientific">${bird.sn}</div>
           </div>
-          <div>
-            <div class="ts-label">Sightings (last ${hours}h)</div>
-            <div class="sighting-count-bar">
-              <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-              <div class="bar-num">${bird.timestamps.length}×</div>
-            </div>
+          <div class="ts-label">Sightings (last ${hours}h)</div>
+          <div class="sighting-count-bar">
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+            <div class="bar-num">${bird.timestamps.length}×</div>
           </div>
-          <div>
-            <div class="ts-label">Most Recent</div>
-            <ul class="ts-list">
-              ${sorted.slice(0,3).map(ts=>`<li>${ts.toLocaleString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true,month:'short',day:'numeric'})}</li>`).join('')}
-            </ul>
-          </div>
+          <div class="ts-label" style="margin-top:4px">Most Recent</div>
+          <ul class="ts-list">
+            ${sorted.slice(0,2).map(ts=>`<li>${ts.toLocaleString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true,month:'short',day:'numeric'})}</li>`).join('')}
+          </ul>
         </div>`;
-      grid.appendChild(card);
+      cards.push(card);
     }
+    return cards;
   }
 
   /* ── Wikipedia image with cache ── */
@@ -663,19 +730,16 @@
   }
 
   /* ── New Bird Alert ── */
-  // Track which species have been seen this session
   const seenSpecies = new Set();
   let alertTimeout = null;
   let alertQueue = [];
   let alertShowing = false;
 
   function checkForNewBirds(detections) {
-    // On first load, just populate the seen set silently
     if (seenSpecies.size === 0) {
       for (const d of detections) seenSpecies.add(d.cn);
       return;
     }
-    // On subsequent refreshes, find any species not previously seen
     for (const d of detections) {
       if (!seenSpecies.has(d.cn)) {
         seenSpecies.add(d.cn);
@@ -690,8 +754,6 @@
     alertShowing = true;
     const d = alertQueue.shift();
     const imgUrl = await getWikiImage(d.sn);
-
-    // Populate card
     document.getElementById('alert-common').textContent = d.cn;
     document.getElementById('alert-scientific').textContent = d.sn;
     document.getElementById('alert-time-value').textContent = d.dt.toLocaleString('en-US', {
@@ -699,32 +761,17 @@
       hour12: true, month: 'short', day: 'numeric'
     });
     const imgWrap = document.getElementById('alert-img-wrap');
-    if (imgUrl) {
-      imgWrap.innerHTML = `<img src="${imgUrl}" alt="${d.sn}">`;
-    } else {
-      imgWrap.innerHTML = '<div class="img-placeholder">🐦</div>';
-    }
-
-    // Show overlay
+    imgWrap.innerHTML = imgUrl ? `<img src="${imgUrl}" alt="${d.sn}">` : '<div class="img-placeholder">🐦</div>';
     const overlay = document.getElementById('new-bird-overlay');
     const card = document.getElementById('alert-card');
     card.classList.remove('dismissing');
     overlay.classList.add('visible');
-
-    // Countdown bar animation
     const fill = document.getElementById('alert-countdown-fill');
     fill.classList.remove('go');
     fill.style.transition = 'none';
     fill.style.width = '100%';
-    setTimeout(() => {
-      fill.style.transition = 'width 15s linear';
-      fill.classList.add('go');
-    }, 50);
-
-    // Pause rotation while alert is showing
-    clearInterval(rotateInterval);
-
-    // Auto-dismiss after 15s
+    setTimeout(() => { fill.style.transition = 'width 15s linear'; fill.classList.add('go'); }, 50);
+    clearTimeout(flipTimer); // pause rotation
     clearTimeout(alertTimeout);
     alertTimeout = setTimeout(() => dismissAlert(), 15000);
   }
@@ -738,9 +785,7 @@
       overlay.classList.remove('visible');
       card.classList.remove('dismissing');
       alertShowing = false;
-      // Resume rotation
-      startRotate();
-      // Show next queued alert if any
+      startRotation();
       if (alertQueue.length > 0) setTimeout(showNextAlert, 800);
     }, 400);
   }
