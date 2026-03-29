@@ -181,6 +181,93 @@
 
     footer { text-align:center;padding:10px 48px;border-top:1px solid rgba(123,191,130,0.1);font-size:0.7rem;color:rgba(245,240,232,0.2);letter-spacing:0.04em;flex-shrink:0; }
 
+    /* ── New Bird Alert Overlay ── */
+    #new-bird-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 25, 14, 0.75);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    #new-bird-overlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .alert-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      overflow: hidden;
+      width: min(480px, 90vw);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 2px var(--amber);
+      transform: scale(0.4);
+      opacity: 0;
+      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+      color: var(--text-dark);
+    }
+    #new-bird-overlay.visible .alert-card {
+      transform: scale(1);
+      opacity: 1;
+    }
+    .alert-card.dismissing {
+      transform: scale(0.4) !important;
+      opacity: 0 !important;
+      transition: transform 0.4s ease-in, opacity 0.4s ease-in !important;
+    }
+    .alert-banner {
+      background: var(--amber);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .alert-banner-icon {
+      font-size: 1.6rem;
+      animation: wobble 0.8s ease infinite alternate;
+    }
+    @keyframes wobble {
+      from { transform: rotate(-12deg); }
+      to   { transform: rotate(12deg); }
+    }
+    .alert-banner-text { flex: 1; }
+    .alert-banner-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: #fff; line-height: 1.2;
+    }
+    .alert-banner-sub {
+      font-size: 0.7rem; color: rgba(255,255,255,0.8);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px;
+    }
+    .alert-dismiss-btn {
+      background: rgba(255,255,255,0.25); border: none; border-radius: 50%;
+      width: 28px; height: 28px; color: #fff; font-size: 1rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background 0.2s;
+    }
+    .alert-dismiss-btn:hover { background: rgba(255,255,255,0.4); }
+    .alert-img-wrap {
+      height: 260px; overflow: hidden; background: var(--cream-dark);
+    }
+    .alert-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center 15%;
+    }
+    .alert-img-wrap .img-placeholder { height: 100%; font-size: 4rem; }
+    .alert-body { padding: 20px 24px 24px; }
+    .alert-common { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--green-deep); }
+    .alert-scientific { font-size: 0.85rem; color: var(--text-mid); font-style: italic; margin-top: 3px; }
+    .alert-time { margin-top: 14px; }
+    .alert-time-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--green-bright); margin-bottom: 5px; }
+    .alert-time-value { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--text-mid); }
+    .alert-countdown-bar { margin-top: 16px; height: 3px; background: var(--cream-dark); border-radius: 2px; overflow: hidden; }
+    .alert-countdown-fill { height: 100%; background: var(--amber); width: 100%; transition: width 15s linear; }
+    .alert-countdown-fill.go { width: 0%; }
+
     @media(max-width:900px){
       .cards-grid{grid-template-columns:repeat(2,1fr);}
       header,.page-tabs,main{padding-left:20px;padding-right:20px;}
@@ -319,6 +406,7 @@
       const res = await fetch(`https://api.haikubox.com/haikubox/${BOX_ID}/detections?hours=24`);
       const data = await res.json();
       allDetections = data.detections.map(d => ({ ...d, dt: new Date(d.dt) }));
+      checkForNewBirds(allDetections);
       await buildAllViews();
       document.getElementById('loading-state').style.display = 'none';
       showView(currentView);
@@ -464,11 +552,123 @@
     return `${Math.round(mins/60)}h ago`;
   }
 
+  /* ── New Bird Alert ── */
+  // Track which species have been seen this session
+  const seenSpecies = new Set();
+  let alertTimeout = null;
+  let alertQueue = [];
+  let alertShowing = false;
+
+  function checkForNewBirds(detections) {
+    // On first load, just populate the seen set silently
+    if (seenSpecies.size === 0) {
+      for (const d of detections) seenSpecies.add(d.cn);
+      return;
+    }
+    // On subsequent refreshes, find any species not previously seen
+    for (const d of detections) {
+      if (!seenSpecies.has(d.cn)) {
+        seenSpecies.add(d.cn);
+        alertQueue.push(d);
+      }
+    }
+    if (!alertShowing && alertQueue.length > 0) showNextAlert();
+  }
+
+  async function showNextAlert() {
+    if (alertQueue.length === 0) { alertShowing = false; return; }
+    alertShowing = true;
+    const d = alertQueue.shift();
+    const imgUrl = await getWikiImage(d.sn);
+
+    // Populate card
+    document.getElementById('alert-common').textContent = d.cn;
+    document.getElementById('alert-scientific').textContent = d.sn;
+    document.getElementById('alert-time-value').textContent = d.dt.toLocaleString('en-US', {
+      timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit',
+      hour12: true, month: 'short', day: 'numeric'
+    });
+    const imgWrap = document.getElementById('alert-img-wrap');
+    if (imgUrl) {
+      imgWrap.innerHTML = `<img src="${imgUrl}" alt="${d.sn}">`;
+    } else {
+      imgWrap.innerHTML = '<div class="img-placeholder">🐦</div>';
+    }
+
+    // Show overlay
+    const overlay = document.getElementById('new-bird-overlay');
+    const card = document.getElementById('alert-card');
+    card.classList.remove('dismissing');
+    overlay.classList.add('visible');
+
+    // Countdown bar animation
+    const fill = document.getElementById('alert-countdown-fill');
+    fill.classList.remove('go');
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    setTimeout(() => {
+      fill.style.transition = 'width 15s linear';
+      fill.classList.add('go');
+    }, 50);
+
+    // Pause rotation while alert is showing
+    clearInterval(rotateInterval);
+
+    // Auto-dismiss after 15s
+    clearTimeout(alertTimeout);
+    alertTimeout = setTimeout(() => dismissAlert(), 15000);
+  }
+
+  function dismissAlert() {
+    clearTimeout(alertTimeout);
+    const overlay = document.getElementById('new-bird-overlay');
+    const card = document.getElementById('alert-card');
+    card.classList.add('dismissing');
+    setTimeout(() => {
+      overlay.classList.remove('visible');
+      card.classList.remove('dismissing');
+      alertShowing = false;
+      // Resume rotation
+      startRotate();
+      // Show next queued alert if any
+      if (alertQueue.length > 0) setTimeout(showNextAlert, 800);
+    }, 400);
+  }
+
   /* ── Init ── */
   document.addEventListener('DOMContentLoaded', () => {
     fetchData();
     setInterval(fetchData, REFRESH_MS);
   });
 </script>
+
+<!-- New Bird Alert Overlay -->
+<div id="new-bird-overlay">
+  <div class="alert-card" id="alert-card">
+    <div class="alert-banner">
+      <div class="alert-banner-icon">🐦</div>
+      <div class="alert-banner-text">
+        <div class="alert-banner-title">New Bird Appeared!</div>
+        <div class="alert-banner-sub">First sighting of the session</div>
+      </div>
+      <button class="alert-dismiss-btn" onclick="dismissAlert()">✕</button>
+    </div>
+    <div class="alert-img-wrap" id="alert-img-wrap">
+      <div class="img-placeholder">🐦</div>
+    </div>
+    <div class="alert-body">
+      <div class="alert-common" id="alert-common"></div>
+      <div class="alert-scientific" id="alert-scientific"></div>
+      <div class="alert-time">
+        <div class="alert-time-label">First Spotted</div>
+        <div class="alert-time-value" id="alert-time-value"></div>
+      </div>
+      <div class="alert-countdown-bar">
+        <div class="alert-countdown-fill" id="alert-countdown-fill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
