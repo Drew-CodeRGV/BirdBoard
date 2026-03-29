@@ -181,32 +181,44 @@
 
     footer { text-align:center;padding:10px 48px;border-top:1px solid rgba(123,191,130,0.1);font-size:0.7rem;color:rgba(245,240,232,0.2);letter-spacing:0.04em;flex-shrink:0; }
 
-    /* ── Landscape mobile: 3 cols x 2 rows ── */
+    /* ── Condense card details globally ── */
+    .card-body { padding: 8px 12px 10px; flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }
+    .bird-names .common { font-size: 0.95rem; }
+    .bird-names .scientific { font-size: 0.68rem; margin-top: 1px; }
+    .ts-label, .timeline-label { font-size: 0.58rem; margin-bottom: 3px; }
+    .ts-list { gap: 2px; }
+    .ts-list li { font-size: 0.68rem; padding: 2px 6px; }
+    .sighting-count-bar { gap: 6px; }
+    .bar-track { height: 5px; }
+    .bar-num { font-size: 0.68rem; min-width: 26px; }
+
+    /* ── Landscape mobile: 3 cards x 1 row ── */
     @media (max-width: 900px) and (orientation: landscape) {
-      header { padding: 10px 20px 8px; }
-      .bird-icon { width: 34px; height: 34px; font-size: 16px; }
-      .site-title { font-size: 1.1rem; }
+      header { padding: 8px 16px; }
+      .bird-icon { width: 30px; height: 30px; font-size: 14px; }
+      .site-title { font-size: 1rem; }
       .site-subtitle { display: none; }
-      .live-badge { padding: 3px 9px; font-size: 0.62rem; }
-      .update-timer { font-size: 0.6rem; }
-      .page-tabs { padding: 0 20px; }
-      .tab-btn { padding: 8px 14px; font-size: 0.65rem; }
-      main { padding: 8px 16px 8px; }
-      .section-label { margin-bottom: 6px; font-size: 0.6rem; }
+      .live-badge { padding: 2px 8px; font-size: 0.6rem; }
+      .update-timer { font-size: 0.58rem; }
+      .page-tabs { padding: 0 16px; }
+      .tab-btn { padding: 7px 10px; font-size: 0.6rem; }
+      .tab-btn .tab-icon { margin-right: 3px; }
+      main { padding: 6px 12px 6px; }
+      .section-label { margin-bottom: 5px; font-size: 0.58rem; }
       .cards-grid {
         grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(2, 1fr);
+        grid-template-rows: 1fr;
         gap: 8px;
       }
-      .view.active { height: calc(100vh - 120px); }
-      .card-body { padding: 6px 10px 8px; gap: 4px; }
-      .bird-names .common { font-size: 0.85rem; }
-      .bird-names .scientific { font-size: 0.65rem; }
-      .ts-label { font-size: 0.55rem; margin-bottom: 2px; }
-      .ts-list li { font-size: 0.62rem; padding: 2px 5px; }
-      .sighting-count-bar { gap: 4px; }
-      .bar-num { font-size: 0.62rem; }
-      footer { padding: 6px 20px; font-size: 0.6rem; }
+      .view.active { height: calc(100vh - 100px); }
+      .card-body { padding: 5px 8px 7px; gap: 3px; }
+      .bird-names .common { font-size: 0.78rem; }
+      .bird-names .scientific { font-size: 0.6rem; }
+      .ts-label { font-size: 0.52rem; margin-bottom: 1px; }
+      .ts-list li { font-size: 0.58rem; padding: 2px 4px; }
+      .ts-list li:nth-child(n+3) { display: none; } /* show max 2 timestamps on mobile */
+      .bar-num { font-size: 0.58rem; }
+      footer { padding: 4px 16px; font-size: 0.58rem; }
     }
 
     /* ── Desktop medium ── */
@@ -435,9 +447,11 @@
 <script>
   /* ── Config ── */
   const BOX_ID = '3485189D1828';
-  const PAGE_SIZE = 6;
-  const ROTATE_MS = 20000;   // 20s per view
-  const REFRESH_MS = 300000; // 5 min data refresh
+  const ROTATE_MS = 20000;
+  const REFRESH_MS = 300000;
+  function getPageSize() {
+    return (window.innerWidth <= 900 && window.innerHeight <= 900) ? 3 : 6;
+  }
 
   /* ── State ── */
   let allDetections = [];   // raw from API (last 24h)
@@ -514,19 +528,19 @@
   /* ── Build all 4 views ── */
   async function buildAllViews() {
     const now = new Date();
+    const pageSize = getPageSize();
 
-    // View 0: 6 most recent individual sightings (unique species, most recent first)
+    // View 0: most recent unique species
     const recentSeen = {};
     const sorted = [...allDetections].sort((a,b) => b.dt - a.dt);
     for (const d of sorted) {
       if (!recentSeen[d.cn]) recentSeen[d.cn] = d;
-      if (Object.keys(recentSeen).length >= PAGE_SIZE) break;
+      if (Object.keys(recentSeen).length >= pageSize) break;
     }
-    const recentBirds = Object.values(recentSeen).slice(0, PAGE_SIZE);
+    const recentBirds = Object.values(recentSeen).slice(0, pageSize);
     document.getElementById('label-0').textContent = `· as of ${now.toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})}`;
     await renderRecentGrid('grid-0', recentBirds);
 
-    // Views 1–3: top birds by sighting count within window
     const windows = [1, 6, 24];
     for (let wi = 0; wi < windows.length; wi++) {
       const hours = windows[wi];
@@ -534,7 +548,7 @@
       const grouped = groupBySpecies(allDetections.filter(d => d.dt >= cutoff));
       const top = Object.values(grouped)
         .sort((a,b) => b.timestamps.length - a.timestamps.length)
-        .slice(0, PAGE_SIZE);
+        .slice(0, pageSize);
       document.getElementById(`label-${wi+1}`).textContent = `· ${top.reduce((s,b)=>s+b.timestamps.length,0)} total sightings`;
       await renderTopGrid(`grid-${wi+1}`, top, hours);
     }
