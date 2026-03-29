@@ -1,407 +1,488 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bird Sightings Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .column {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .column h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-        .bird-entry {
-            padding: 10px;
-            margin: 10px 0;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid #3498db;
-        }
-        .scientific-name {
-            font-size: smaller;
-            font-style: italic;
-            color: #666;
-            margin-top: 2px;
-        }
-        .bird-entry p {
-            margin: 5px 0;
-        }
-        .timestamp {
-            color: #666;
-            font-size: 0.9em;
-        }
-        .error {
-            color: #e74c3c;
-            text-align: center;
-            padding: 20px;
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-        #timezone-info {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drew's Backyard Birds</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --green-deep: #1a3320;
+      --green-mid: #2d5a34;
+      --green-bright: #4a8c52;
+      --green-light: #7bbf82;
+      --cream: #f5f0e8;
+      --cream-dark: #e8e0d0;
+      --amber: #d4942a;
+      --amber-light: #f0b843;
+      --text-dark: #1a1a1a;
+      --text-mid: #444;
+      --card-bg: rgba(255,255,255,0.97);
+      --shadow: 0 4px 32px rgba(0,0,0,0.18);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--green-deep);
+      background-image:
+        radial-gradient(ellipse at 20% 0%, rgba(74,140,82,0.25) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 100%, rgba(45,90,52,0.4) 0%, transparent 50%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a8c52' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      min-height: 100vh;
+      color: var(--cream);
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 48px 20px;
+      border-bottom: 1px solid rgba(123,191,130,0.2);
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .bird-icon {
+      width: 46px; height: 46px;
+      background: var(--amber);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 2px 12px rgba(212,148,42,0.4);
+      flex-shrink: 0;
+    }
+    .site-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--cream);
+      line-height: 1.1;
+    }
+    .site-subtitle {
+      font-size: 0.75rem;
+      color: var(--green-light);
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+    .header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(74,140,82,0.2);
+      border: 1px solid rgba(123,191,130,0.3);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green-light);
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      background: #5cdd6a;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:0.5; transform:scale(0.8); }
+    }
+    .update-timer {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: rgba(245,240,232,0.35);
+    }
+
+    /* Main */
+    main { padding: 36px 48px 60px; }
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--green-light);
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(123,191,130,0.2);
+    }
+
+    /* Loading */
+    #loading-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 80px 0; gap: 18px; color: var(--green-light);
+    }
+    .spinner {
+      width: 38px; height: 38px;
+      border: 3px solid rgba(123,191,130,0.2);
+      border-top-color: var(--green-light);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Cards grid */
+    #cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 22px;
+    }
+    .bird-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex; flex-direction: column;
+      color: var(--text-dark);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      animation: cardIn 0.4s ease both;
+    }
+    @keyframes cardIn {
+      from { opacity:0; transform:translateY(14px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .bird-card:hover { transform: translateY(-4px); box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
+    .bird-card.just-spotted { outline: 2px solid var(--amber); outline-offset: -1px; }
+
+    .card-image-wrap {
+      position: relative; height: 200px; overflow: hidden;
+      background: var(--cream-dark);
+    }
+    .card-image-wrap img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.5s ease;
+    }
+    .bird-card:hover .card-image-wrap img { transform: scale(1.04); }
+    .img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem; color: var(--green-mid); background: var(--cream-dark);
+    }
+    .new-badge {
+      position: absolute; top: 12px; left: 12px;
+      background: var(--amber); color: #fff;
+      font-size: 0.63rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 4px 10px; border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(212,148,42,0.5);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .new-badge::before {
+      content: ''; width: 6px; height: 6px;
+      background: #fff; border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+    .count-chip {
+      position: absolute; bottom: 12px; right: 12px;
+      background: rgba(26,51,32,0.82); color: var(--green-light);
+      font-family: 'DM Mono', monospace; font-size: 0.7rem;
+      padding: 3px 9px; border-radius: 20px; backdrop-filter: blur(4px);
+    }
+
+    .card-body { padding: 18px 20px 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+    .bird-names .common {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.22rem; font-weight: 700;
+      color: var(--green-deep); line-height: 1.2;
+    }
+    .bird-names .scientific { font-size: 0.78rem; color: var(--text-mid); font-style: italic; margin-top: 3px; }
+
+    .ts-label, .timeline-label {
+      font-size: 0.65rem; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--green-bright); margin-bottom: 7px;
+    }
+    .ts-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .ts-list li {
+      font-family: 'DM Mono', monospace; font-size: 0.76rem;
+      color: var(--text-mid); padding: 4px 8px;
+      background: var(--cream); border-radius: 6px;
+      border-left: 3px solid var(--green-light);
+    }
+    .ts-list li:first-child { border-left-color: var(--amber); color: var(--text-dark); font-weight: 500; }
+
+    .timeline-wrap { height: 78px; position: relative; }
+
+    /* Controls */
+    .controls {
+      margin-top: 34px; display: flex;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    .page-info {
+      font-size: 0.76rem; color: rgba(245,240,232,0.5);
+      font-family: 'DM Mono', monospace; min-width: 130px; text-align: center;
+    }
+    .auto-chip { font-size: 0.68rem; color: rgba(245,240,232,0.3); font-family: 'DM Mono', monospace; }
+    .ctrl-btn {
+      background: rgba(74,140,82,0.2); border: 1px solid rgba(123,191,130,0.3);
+      color: var(--cream); font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem; font-weight: 500; padding: 9px 22px;
+      border-radius: 8px; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .ctrl-btn:hover:not(:disabled) { background: rgba(74,140,82,0.4); border-color: rgba(123,191,130,0.6); }
+    .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+
+    footer {
+      text-align: center; padding: 22px 48px;
+      border-top: 1px solid rgba(123,191,130,0.1);
+      font-size: 0.7rem; color: rgba(245,240,232,0.22); letter-spacing: 0.04em;
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 18px 18px 14px; flex-direction: column; align-items: flex-start; gap: 12px; }
+      main { padding: 22px 14px 48px; }
+      #cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"> 1.9 </span></h1>
-    <div id="timezone-info">Showing times in Central Time</div>
-    <div class="dashboard">
-        <div class="column">
-            <h2>Last 4 Hours</h2>
-            <div id="four-hours"><p class="loading">Loading...</p></div>
-        </div>
-        <div class="column">
-            <h2>Last 12 Hours</h2>
-            <div id="twelve-hours"><p class="loading">Loading...</p></div>
-        </div>
-        <div class="column">
-            <h2>Last 24 Hours</h2>
-            <div id="twenty-four-hours"><p class="loading">Loading...</p></div>
-        </div>
+
+<header>
+  <div class="header-left">
+    <div class="bird-icon">🐦</div>
+    <div>
+      <div class="site-title">Drew's Backyard Birds</div>
+      <div class="site-subtitle">Live Feeder Observations · Last 8 Hours</div>
     </div>
+  </div>
+  <div class="header-meta">
+    <div class="live-badge"><span class="live-dot"></span> Live</div>
+    <div class="update-timer" id="next-update">Next refresh in 5:00</div>
+  </div>
+</header>
 
-    <script>
-        const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
-        
-        function formatTimestamp(utcTimestamp) {
-            return moment.tz(utcTimestamp, "America/Chicago").format('MMM D, YYYY h:mm A z');
-        }
+<main>
+  <div class="section-label">Spotted Today</div>
 
-        function createBirdEntry(bird) {
-            return `
-                <div class="bird-entry">
-                    <p>
-                        <strong>${bird.cn || 'Unknown Species'}</strong>
-                        <br>
-                        <span class="scientific-name">${bird.sn || 'Species name unavailable'}</span>
-                    </p>
-                    <p class="timestamp">Spotted: ${formatTimestamp(bird.dt)}</p>
-                </div>
-            `;
-        }
+  <div id="loading-state">
+    <div class="spinner"></div>
+    <span style="font-size:0.83rem; letter-spacing:0.06em;">Listening for birds…</span>
+  </div>
 
-        function processApiResponse(data) {
-            // Check if data is already an array
-            if (Array.isArray(data)) {
-                return data;
-            }
-            
-            // If data is an object with a detections property
-            if (data && data.detections) {
-                return data.detections;
-            }
+  <div id="cards-grid" style="display:none;"></div>
 
-            // If data is an object but not in the expected format
-            if (data && typeof data === 'object') {
-                return Object.values(data);
-            }
-
-            // If none of the above, return empty array
-            return [];
-        }
-
-        async function fetchBoxInfo() {
-            try {
-                const response = await fetch(BASE_URL);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.haikuboxName) {
-                    document.getElementById('dashboard-name').textContent = data.haikuboxName;
-                    document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
-                }
-            } catch (error) {
-                console.error('Error fetching box info:', error);
-            }
-        }
-
-        async function fetchBirdData(hours) {
-            const response = await fetch(`${BASE_URL}/detections?hours=${hours}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            const processedData = processApiResponse(data);
-            
-            // Sort by detection time
-            return processedData.sort((a, b) => moment(b.dt).valueOf() - moment(a.dt).valueOf());
-        }
-
-        async function updateDashboard() {
-            try {
-                const tzOffset = moment().tz("America/Chicago").format('z');
-                document.getElementById('timezone-info').textContent = 
-                    `Showing times in Central Time (${tzOffset})`;
-                
-                const [fourHourData, twelveHourData, twentyFourHourData] = await Promise.all([
-                    fetchBirdData(4),
-                    fetchBirdData(12),
-                    fetchBirdData(24)
-                ]);
-
-                document.getElementById('four-hours').innerHTML = 
-                    fourHourData.length ? fourHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 4 hours</p>';
-
-                document.getElementById('twelve-hours').innerHTML = 
-                    twelveHourData.length ? twelveHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 12 hours</p>';
-
-                document.getElementById('twenty-four-hours').innerHTML = 
-                    twentyFourHourData.length ? twentyFourHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 24 hours</p>';
-
-            } catch (error) {
-                console.error('Error fetching bird data:', error);
-                const errorMessage = `
-                    <p class="error">Error loading bird data. Please try again later.</p>
-                    <p class="error-details">
-                        Error details: ${error.message}<br>
-                        Time: ${moment().tz("America/Chicago").format('YYYY-MM-DD HH:mm:ss z')}
-                    </p>`;
-                document.querySelectorAll('.column > div').forEach(div => {
-                    div.innerHTML = errorMessage;
-                });
-            }
-        }
-
-        // Initial load
-        fetchBoxInfo();
-        updateDashboard();
-        
-        // Update dashboard every 5 minutes
-        setInterval(updateDashboard, 5 * 60 * 1000);
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bird Sightings Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .column {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .column h2 {
-            color: #2c3e50;
-            margin-top: 0;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-        .bird-entry {
-            padding: 10px;
-            margin: 10px 0;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid #3498db;
-        }
-        .scientific-name {
-            font-size: smaller;
-            font-style: italic;
-            color: #666;
-            margin-top: 2px;
-        }
-        .bird-entry p {
-            margin: 5px 0;
-        }
-        .timestamp {
-            color: #666;
-            font-size: 0.9em;
-        }
-        .error {
-            color: #e74c3c;
-            text-align: center;
-            padding: 20px;
-        }
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-        #timezone-info {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-        }
-    </style>
-</head>
-<body>
-    <h1 style="text-align: center; color: #2c3e50;">Bird Sightings Dashboard - <span id="dashboard-name"></span></h1>
-    <div id="timezone-info">Showing times in Central Time</div>
-    <div class="dashboard">
-        <div class="column">
-            <h2>Last 4 Hours</h2>
-            <div id="four-hours"><p class="loading">Loading...</p></div>
-        </div>
-        <div class="column">
-            <h2>Last 12 Hours</h2>
-            <div id="twelve-hours"><p class="loading">Loading...</p></div>
-        </div>
-        <div class="column">
-            <h2>Last 24 Hours</h2>
-            <div id="twenty-four-hours"><p class="loading">Loading...</p></div>
-        </div>
+  <div class="controls" id="controls" style="display:none;">
+    <button class="ctrl-btn" id="btn-prev" onclick="changePage(-1)">← Prev</button>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+      <div class="page-info" id="page-info"></div>
+      <div class="auto-chip">Auto-advances every 15s</div>
     </div>
+    <button class="ctrl-btn" id="btn-next" onclick="changePage(1)">Next →</button>
+  </div>
+</main>
 
-    <script>
-        const BASE_URL = 'https://api.haikubox.com/haikubox/3485189D1828';
-        
-        function formatTimestamp(utcTimestamp) {
-            return moment.tz(utcTimestamp, "America/Chicago").format('MMM D, YYYY h:mm A z');
+<footer>Powered by HaikuBox · Wikipedia · Data refreshes every 5 minutes</footer>
+
+<script>
+  const PAGE_SIZE = 3;
+  let allDetections = [];
+  let currentPage = 0;
+  let refreshCountdown = 300;
+  let countdownInterval, autoPageInterval;
+
+  function startCountdown() {
+    clearInterval(countdownInterval);
+    refreshCountdown = 300;
+    countdownInterval = setInterval(() => {
+      refreshCountdown--;
+      const m = Math.floor(refreshCountdown / 60);
+      const s = String(refreshCountdown % 60).padStart(2, '0');
+      document.getElementById('next-update').textContent = `Next refresh in ${m}:${s}`;
+      if (refreshCountdown <= 0) { clearInterval(countdownInterval); fetchDetections(); }
+    }, 1000);
+  }
+
+  async function fetchDetections() {
+    try {
+      const res = await fetch('https://api.haikubox.com/haikubox/3485189D1828/detections?hours=24');
+      const data = await res.json();
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
+      const grouped = {};
+      const firstSeen = {};
+
+      for (const d of data.detections) {
+        const dt = new Date(d.dt);
+        if (dt < cutoff) continue;
+        if (!grouped[d.cn]) grouped[d.cn] = { cn: d.cn, sn: d.sn, timestamps: [] };
+        grouped[d.cn].timestamps.push(dt);
+        if (!firstSeen[d.sn] || dt < firstSeen[d.sn]) firstSeen[d.sn] = dt;
+      }
+
+      allDetections = Object.values(grouped)
+        .filter(b => b.timestamps.length > 1)
+        .sort((a, b) => Math.max(...b.timestamps) - Math.max(...a.timestamps));
+
+      for (const bird of allDetections) {
+        bird.justSpotted = (now - firstSeen[bird.sn]) < 30 * 60 * 1000;
+      }
+
+      currentPage = 0;
+      renderPage();
+      startAutoPage();
+      startCountdown();
+    } catch (err) { console.error('Fetch error:', err); }
+  }
+
+  function startAutoPage() {
+    clearInterval(autoPageInterval);
+    autoPageInterval = setInterval(() => {
+      const total = Math.ceil(allDetections.length / PAGE_SIZE);
+      currentPage = (currentPage + 1) % total;
+      renderPage();
+    }, 15000);
+  }
+
+  function changePage(dir) {
+    const total = Math.ceil(allDetections.length / PAGE_SIZE);
+    currentPage = Math.max(0, Math.min(total - 1, currentPage + dir));
+    renderPage();
+    startAutoPage();
+  }
+
+  async function renderPage() {
+    const grid = document.getElementById('cards-grid');
+    const loading = document.getElementById('loading-state');
+    const controls = document.getElementById('controls');
+    const total = Math.ceil(allDetections.length / PAGE_SIZE);
+
+    loading.style.display = 'none';
+    grid.style.display = 'grid';
+    controls.style.display = total > 1 ? 'flex' : 'none';
+
+    document.getElementById('page-info').textContent =
+      `Page ${currentPage + 1} of ${total}  ·  ${allDetections.length} species`;
+    document.getElementById('btn-prev').disabled = currentPage === 0;
+    document.getElementById('btn-next').disabled = currentPage >= total - 1;
+
+    grid.innerHTML = '';
+    const slice = allDetections.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
+    for (let i = 0; i < slice.length; i++) {
+      const card = await buildCard(slice[i], i);
+      card.style.animationDelay = `${i * 0.08}s`;
+      grid.appendChild(card);
+      drawTimeline(`tl-${i}`, slice[i].timestamps);
+    }
+  }
+
+  async function buildCard(bird, idx) {
+    const { cn, sn, timestamps, justSpotted } = bird;
+    const sorted = [...timestamps].sort((a, b) => b - a);
+    const imgUrl = await fetchWikiImage(sn);
+
+    const card = document.createElement('div');
+    card.className = 'bird-card' + (justSpotted ? ' just-spotted' : '');
+
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'card-image-wrap';
+    if (imgUrl) {
+      const img = document.createElement('img');
+      img.src = imgUrl; img.alt = sn;
+      img.onerror = () => { imgWrap.innerHTML = '<div class="img-placeholder">🐦</div>'; };
+      imgWrap.appendChild(img);
+    } else {
+      imgWrap.innerHTML = '<div class="img-placeholder">🐦</div>';
+    }
+    if (justSpotted) {
+      const badge = document.createElement('div');
+      badge.className = 'new-badge';
+      badge.textContent = 'Just Spotted';
+      imgWrap.appendChild(badge);
+    }
+    const chip = document.createElement('div');
+    chip.className = 'count-chip';
+    chip.textContent = `${sorted.length} sighting${sorted.length !== 1 ? 's' : ''}`;
+    imgWrap.appendChild(chip);
+    card.appendChild(imgWrap);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+
+    const names = document.createElement('div');
+    names.className = 'bird-names';
+    names.innerHTML = `<div class="common">${cn}</div><div class="scientific">${sn}</div>`;
+    body.appendChild(names);
+
+    const tsSection = document.createElement('div');
+    tsSection.innerHTML = `<div class="ts-label">Recent Sightings</div>`;
+    const tsList = document.createElement('ul');
+    tsList.className = 'ts-list';
+    sorted.slice(0, 5).forEach(ts => {
+      const li = document.createElement('li');
+      li.textContent = ts.toLocaleString('en-US', {
+        timeZone: 'America/Chicago', hour: 'numeric',
+        minute: '2-digit', hour12: true, month: 'short', day: 'numeric'
+      });
+      tsList.appendChild(li);
+    });
+    tsSection.appendChild(tsList);
+    body.appendChild(tsSection);
+
+    const tlSection = document.createElement('div');
+    tlSection.innerHTML = `<div class="timeline-label">Activity (last 8h)</div><div class="timeline-wrap"><canvas id="tl-${idx}"></canvas></div>`;
+    body.appendChild(tlSection);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  async function fetchWikiImage(sn) {
+    try {
+      const s = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&search=${encodeURIComponent(sn)}&limit=1`);
+      const sd = await s.json();
+      if (!sd[1][0]) return null;
+      const p = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(sd[1][0])}`);
+      const pd = await p.json();
+      return pd.thumbnail ? pd.thumbnail.source : null;
+    } catch { return null; }
+  }
+
+  function drawTimeline(canvasId, timestamps) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const cutoff = new Date(Date.now() - 8 * 60 * 60 * 1000);
+    const points = timestamps.map(ts => ({
+      x: (ts - cutoff) / (60 * 60 * 1000),
+      y: 0
+    }));
+    new Chart(canvas.getContext('2d'), {
+      type: 'scatter',
+      data: { datasets: [{ data: points, pointBackgroundColor: '#d4942a', pointBorderColor: '#d4942a', pointRadius: 5, pointHoverRadius: 7, showLine: false }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 400 },
+        scales: {
+          x: {
+            type: 'linear', min: 0, max: 8,
+            title: { display: true, text: 'Hours Ago', color: '#888', font: { size: 9, family: 'DM Mono' } },
+            ticks: { stepSize: 1, color: '#aaa', font: { size: 9 }, callback: v => v === 8 ? '8h' : v === 0 ? 'Now' : `${8-v}h` },
+            grid: { color: 'rgba(0,0,0,0.06)' }
+          },
+          y: { display: false }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => { const h = (8 - ctx.parsed.x).toFixed(1); return h === '0.0' ? 'Just now' : `${h}h ago`; } } }
         }
+      }
+    });
+  }
 
-        function createBirdEntry(bird) {
-            return `
-                <div class="bird-entry">
-                    <p>
-                        <strong>${bird.cn || 'Unknown Species'}</strong>
-                        <br>
-                        <span class="scientific-name">${bird.sn || 'Species name unavailable'}</span>
-                    </p>
-                    <p class="timestamp">Spotted: ${formatTimestamp(bird.dt)}</p>
-                </div>
-            `;
-        }
-
-        function processApiResponse(data) {
-            // Check if data is already an array
-            if (Array.isArray(data)) {
-                return data;
-            }
-            
-            // If data is an object with a detections property
-            if (data && data.detections) {
-                return data.detections;
-            }
-
-            // If data is an object but not in the expected format
-            if (data && typeof data === 'object') {
-                return Object.values(data);
-            }
-
-            // If none of the above, return empty array
-            return [];
-        }
-
-        async function fetchBoxInfo() {
-            try {
-                const response = await fetch(BASE_URL);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.haikuboxName) {
-                    document.getElementById('dashboard-name').textContent = data.haikuboxName;
-                    document.title = `Bird Sightings Dashboard - ${data.haikuboxName}`;
-                }
-            } catch (error) {
-                console.error('Error fetching box info:', error);
-            }
-        }
-
-        async function fetchBirdData(hours) {
-            const response = await fetch(`${BASE_URL}/detections?hours=${hours}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            const processedData = processApiResponse(data);
-            
-            // Sort by detection time
-            return processedData.sort((a, b) => moment(b.dt).valueOf() - moment(a.dt).valueOf());
-        }
-
-        async function updateDashboard() {
-            try {
-                const tzOffset = moment().tz("America/Chicago").format('z');
-                document.getElementById('timezone-info').textContent = 
-                    `Showing times in Central Time (${tzOffset})`;
-                
-                const [fourHourData, twelveHourData, twentyFourHourData] = await Promise.all([
-                    fetchBirdData(4),
-                    fetchBirdData(12),
-                    fetchBirdData(24)
-                ]);
-
-                document.getElementById('four-hours').innerHTML = 
-                    fourHourData.length ? fourHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 4 hours</p>';
-
-                document.getElementById('twelve-hours').innerHTML = 
-                    twelveHourData.length ? twelveHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 12 hours</p>';
-
-                document.getElementById('twenty-four-hours').innerHTML = 
-                    twentyFourHourData.length ? twentyFourHourData.map(createBirdEntry).join('') 
-                    : '<p>No birds spotted in the last 24 hours</p>';
-
-            } catch (error) {
-                console.error('Error fetching bird data:', error);
-                const errorMessage = `
-                    <p class="error">Error loading bird data. Please try again later.</p>
-                    <p class="error-details">
-                        Error details: ${error.message}<br>
-                        Time: ${moment().tz("America/Chicago").format('YYYY-MM-DD HH:mm:ss z')}
-                    </p>`;
-                document.querySelectorAll('.column > div').forEach(div => {
-                    div.innerHTML = errorMessage;
-                });
-            }
-        }
-
-        // Initial load
-        fetchBoxInfo();
-        updateDashboard();
-        
-        // Update dashboard every 5 minutes
-        setInterval(updateDashboard, 5 * 60 * 1000);
-    </script>
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchDetections();
+    setInterval(fetchDetections, 300000);
+  });
+</script>
 </body>
 </html>
