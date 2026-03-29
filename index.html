@@ -100,7 +100,7 @@
       min-height: 0;
       overflow: hidden;
     }
-    .view { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    .view { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
     .view.active { display: flex; }
 
     /* ── Section label ── */
@@ -216,23 +216,32 @@
 
     /* ── Landscape phone (≤767px wide): 2 cards ── */
     @media (max-width: 767px) and (orientation: landscape) {
-      header { padding: 6px 14px; }
+      header { padding: 6px 14px; flex-shrink: 0; }
       .bird-icon { width: 28px; height: 28px; font-size: 13px; }
       .site-title { font-size: 0.95rem; }
       .site-subtitle { display: none; }
       .live-badge { padding: 2px 7px; font-size: 0.58rem; }
       .update-timer { display: none; }
-      .page-tabs { padding: 0 14px; }
+      .page-tabs { padding: 0 14px; flex-shrink: 0; }
       .tab-btn { padding: 6px 9px; font-size: 0.58rem; }
       .tab-btn .tab-icon { display: none; }
-      main { padding: 5px 10px 4px; }
-      .section-label { margin-bottom: 4px; font-size: 0.55rem; }
+      .rotate-bar-wrap { flex-shrink: 0; }
+      footer { padding: 3px 14px; font-size: 0.55rem; flex-shrink: 0; }
+      main { padding: 4px 10px 3px; flex: 1; min-height: 0; }
+      .section-label { margin-bottom: 3px; font-size: 0.55rem; flex-shrink: 0; }
+      .view { min-height: 0; }
+      .view.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
       .cards-grid {
         grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: 1fr;
+        grid-template-rows: minmax(0, 1fr);
         gap: 8px;
+        flex: 1;
+        min-height: 0;
+        align-items: stretch;
       }
-      .card-body { padding: 4px 7px 6px; gap: 2px; }
+      .bird-card { min-height: 0; overflow: hidden; }
+      .card-image-wrap { flex: 1; height: 0; min-height: 0; }
+      .card-body { padding: 4px 7px 6px; gap: 2px; flex-shrink: 0; }
       .bird-names .common { font-size: 0.72rem; }
       .bird-names .scientific { font-size: 0.56rem; }
       .ts-label { font-size: 0.5rem; }
@@ -240,26 +249,30 @@
       .ts-list li:nth-child(n+2) { display: none; }
       .sighting-count-bar { gap: 4px; }
       .bar-num { font-size: 0.55rem; }
-      footer { padding: 3px 14px; font-size: 0.55rem; }
     }
 
     /* ── iPad landscape (768px–1180px): 3×2 grid ── */
     @media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
-      header { padding: 10px 24px 8px; }
+      header { padding: 10px 24px 8px; flex-shrink: 0; }
       .site-title { font-size: 1.25rem; }
       .site-subtitle { display: none; }
-      .page-tabs { padding: 0 24px; }
+      .page-tabs { padding: 0 24px; flex-shrink: 0; }
       .tab-btn { padding: 9px 14px; font-size: 0.68rem; }
-      main { padding: 8px 20px 8px; }
-      .section-label { margin-bottom: 8px; }
+      main { padding: 8px 20px 8px; flex: 1; min-height: 0; }
+      .section-label { margin-bottom: 8px; flex-shrink: 0; }
+      .view.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
       .cards-grid {
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(2, minmax(0, 1fr));
         gap: 10px;
+        flex: 1;
+        min-height: 0;
       }
-      .card-body { padding: 6px 10px 8px; gap: 4px; }
+      .bird-card { min-height: 0; overflow: hidden; }
+      .card-image-wrap { flex: 1; height: 0; min-height: 0; }
+      .card-body { padding: 6px 10px 8px; gap: 4px; flex-shrink: 0; }
       .bird-names .common { font-size: 0.88rem; }
-      footer { padding: 5px 24px; }
+      footer { padding: 5px 24px; flex-shrink: 0; }
     }
 
     /* ── Mid desktop (901–1200px) ── */
