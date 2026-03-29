@@ -195,7 +195,7 @@
     .bar-track { height: 5px; }
     .bar-num { font-size: 0.68rem; min-width: 26px; }
 
-    /* ── Landscape mobile: 3 cards x 1 row ── */
+    /* ── Landscape phone: 2 cards, 1 row ── */
     @media (max-width: 900px) and (orientation: landscape) {
       header { padding: 8px 16px; }
       .bird-icon { width: 30px; height: 30px; font-size: 14px; }
@@ -209,7 +209,7 @@
       main { padding: 6px 12px 6px; }
       .section-label { margin-bottom: 5px; font-size: 0.58rem; }
       .cards-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         grid-template-rows: 1fr;
         gap: 8px;
       }
@@ -219,9 +219,27 @@
       .bird-names .scientific { font-size: 0.6rem; }
       .ts-label { font-size: 0.52rem; margin-bottom: 1px; }
       .ts-list li { font-size: 0.58rem; padding: 2px 4px; }
-      .ts-list li:nth-child(n+3) { display: none; } /* show max 2 timestamps on mobile */
+      .ts-list li:nth-child(n+3) { display: none; }
       .bar-num { font-size: 0.58rem; }
       footer { padding: 4px 16px; font-size: 0.58rem; }
+    }
+
+    /* ── iPad landscape: 3×2 grid, full 6 cards ── */
+    @media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
+      header { padding: 12px 28px 10px; }
+      .site-title { font-size: 1.3rem; }
+      .page-tabs { padding: 0 28px; }
+      .tab-btn { padding: 10px 16px; font-size: 0.7rem; }
+      main { padding: 10px 24px 10px; }
+      .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .view.active { height: calc(100vh - 130px); }
+      .card-body { padding: 8px 12px 10px; gap: 5px; }
+      .bird-names .common { font-size: 0.9rem; }
+      footer { padding: 6px 28px; }
     }
 
     /* ── Desktop medium ── */
@@ -251,7 +269,7 @@
       text-align: center;
       padding: 40px;
     }
-    @media (orientation: portrait) and (max-width: 900px) {
+    @media (orientation: portrait) and (max-width: 500px) {
       #portrait-overlay { display: flex; }
     }
     .rotate-phone-icon {
@@ -450,10 +468,29 @@
 <script>
   /* ── Config ── */
   const BOX_ID = '3485189D1828';
-  const CARD_SLOT = 2;       // cards visible at once
+  const CARD_SLOT = 2;       // cards visible at once on mobile; 6 on iPad/desktop
   const FLIP_MS  = 5000;     // ms each batch of cards shows
   const REFRESH_MS = 300000; // 5 min data refresh
   const NUM_VIEWS = 4;
+
+  /* ── Device detection ── */
+  function isIPad() {
+    // iPad on iOS 13+ reports as MacIntel with touch support
+    return /iPad/.test(navigator.userAgent) ||
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function isPhone() {
+    return /iPhone|Android/.test(navigator.userAgent) && !isIPad();
+  }
+  function getCardSlot() {
+    // iPad: show 6 at once (no flipping needed, just rotate views)
+    // Phone: show 2 at a time
+    // Desktop: show 6 at once
+    return isPhone() ? 2 : 6;
+  }
+  function getMaxCards() {
+    return isPhone() ? 6 : 6; // always fetch 6, display varies
+  }
 
   /* ── State ── */
   let allDetections = [];
@@ -506,7 +543,8 @@
 
   function tick() {
     const birds = viewBirds[currentView];
-    const totalSlots = Math.ceil(birds.length / CARD_SLOT);
+    const slot = getCardSlot();
+    const totalSlots = Math.ceil(birds.length / slot);
     const nextSlot = currentSlot + 1;
 
     if (nextSlot < totalSlots) {
@@ -533,12 +571,13 @@
     flipCardsIn(idx, 0, animate);
   }
 
-  /* ── Render a batch of CARD_SLOT cards into the visible grid ── */
+  /* ── Render a batch of cards into the visible grid ── */
   function flipCardsIn(viewIdx, slotIdx, animate) {
     const grid = document.getElementById(`grid-${viewIdx}`);
     const birds = viewBirds[viewIdx];
-    const start = slotIdx * CARD_SLOT;
-    const batch = birds.slice(start, start + CARD_SLOT);
+    const slot = getCardSlot();
+    const start = slotIdx * slot;
+    const batch = birds.slice(start, start + slot);
 
     // Flip out existing cards
     const existing = grid.querySelectorAll('.bird-card');
@@ -572,7 +611,8 @@
   /* ── Slot indicator dots ── */
   function updateDots(viewIdx) {
     const birds = viewBirds[viewIdx];
-    const totalSlots = Math.ceil(birds.length / CARD_SLOT);
+    const slot = getCardSlot();
+    const totalSlots = Math.ceil(birds.length / slot);
     const dotsEl = document.getElementById(`dots-${viewIdx}`);
     if (!dotsEl) return;
     dotsEl.innerHTML = Array.from({length: totalSlots}, (_, i) =>
