@@ -132,12 +132,12 @@
     .bird-card {
       background: var(--card-bg); border-radius: 16px; overflow: hidden;
       box-shadow: var(--shadow); display: flex; flex-direction: column;
-      color: var(--text-dark); transition: transform 0.25s ease, box-shadow 0.25s ease;
-      animation: cardIn 0.35s ease both;
+      color: var(--text-dark); transition: box-shadow 0.25s ease;
       min-height: 0;
+      position: relative;
+      transform-style: preserve-3d;
     }
-    @keyframes cardIn { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
-    .bird-card:hover { transform: translateY(-3px); box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
+    .bird-card:hover { box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
     .bird-card.just-spotted { outline: 2px solid var(--amber); outline-offset: -1px; }
 
     .card-image-wrap { position:relative; flex:1; min-height:0; overflow:hidden; background:var(--cream-dark); }
@@ -571,41 +571,79 @@
     flipCardsIn(idx, 0, animate);
   }
 
-  /* ── Render a batch of cards into the visible grid ── */
-  function flipCardsIn(viewIdx, slotIdx, animate) {
+  /* ── Calendar flip animation ── */
+  function flipCardsIn(viewIdx, slotIdx) {
     const grid = document.getElementById(`grid-${viewIdx}`);
     const birds = viewBirds[viewIdx];
     const slot = getCardSlot();
     const start = slotIdx * slot;
     const batch = birds.slice(start, start + slot);
 
-    // Flip out existing cards
-    const existing = grid.querySelectorAll('.bird-card');
-    existing.forEach((c, i) => {
-      c.style.transition = `transform 0.35s ${i * 0.06}s cubic-bezier(0.4,0,1,1), opacity 0.35s ${i * 0.06}s`;
-      c.style.transform = 'translateY(100%) scaleY(0.6)';
-      c.style.opacity = '0';
-    });
+    const existingCards = Array.from(grid.querySelectorAll('.bird-card'));
 
-    const delay = existing.length ? 380 : 0;
-    setTimeout(() => {
-      grid.innerHTML = '';
+    if (existingCards.length === 0) {
+      // First render — just drop cards in with a simple fade+fall
       batch.forEach((cardEl, i) => {
         const clone = cardEl.cloneNode(true);
-        clone.style.transform = 'translateY(40px)';
         clone.style.opacity = '0';
+        clone.style.transform = 'translateY(16px)';
         clone.style.transition = 'none';
         grid.appendChild(clone);
         requestAnimationFrame(() => requestAnimationFrame(() => {
-          clone.style.transition = `transform 0.4s ${i * 0.08}s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ${i * 0.08}s`;
-          clone.style.transform = 'translateY(0)';
+          clone.style.transition = `opacity 0.35s ${i*0.07}s ease, transform 0.35s ${i*0.07}s ease`;
           clone.style.opacity = '1';
+          clone.style.transform = 'translateY(0)';
         }));
       });
-
-      // Update slot indicator dots
       updateDots(viewIdx);
-    }, delay);
+      return;
+    }
+
+    // Calendar flip: new card starts rotated -90deg (folded up above top edge),
+    // then swings down to 0deg landing flat on top of the existing card.
+    batch.forEach((cardEl, i) => {
+      const existing = existingCards[i];
+      if (!existing) return;
+
+      const clone = cardEl.cloneNode(true);
+
+      // Position the new card exactly over the existing one
+      clone.style.position = 'absolute';
+      clone.style.inset = '0';
+      clone.style.margin = '0';
+      clone.style.zIndex = '10';
+
+      // 3D flip setup — pivot on top edge
+      clone.style.transformOrigin = 'top center';
+      clone.style.transform = 'perspective(800px) rotateX(-90deg)';
+      clone.style.transition = 'none';
+      clone.style.borderRadius = '16px';
+      clone.style.overflow = 'hidden';
+
+      // Wrap the existing card in a relative container so we can overlay
+      existing.style.position = 'relative';
+      existing.appendChild(clone);
+
+      // Slight stagger per card
+      const delay = i * 80;
+
+      setTimeout(() => {
+        clone.style.transition = `transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)`;
+        clone.style.transform = 'perspective(800px) rotateX(0deg)';
+      }, delay);
+
+      // After animation completes, replace the old card cleanly
+      setTimeout(() => {
+        const parent = existing.parentNode;
+        if (parent) {
+          const final = cardEl.cloneNode(true);
+          parent.replaceChild(final, existing);
+        }
+      }, delay + 520);
+    });
+
+    // After all flips done, update dots
+    setTimeout(() => updateDots(viewIdx), batch.length * 80 + 540);
   }
 
   /* ── Slot indicator dots ── */
