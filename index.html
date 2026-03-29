@@ -15,7 +15,6 @@
       --cream: #f5f0e8;
       --cream-dark: #e8e0d0;
       --amber: #d4942a;
-      --amber-light: #f0b843;
       --text-dark: #1a1a1a;
       --text-mid: #444;
       --card-bg: rgba(255,255,255,0.97);
@@ -35,84 +34,73 @@
 
     /* Header */
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 28px 48px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 48px 18px;
       border-bottom: 1px solid rgba(123,191,130,0.2);
     }
     .header-left { display: flex; align-items: center; gap: 16px; }
     .bird-icon {
-      width: 46px; height: 46px;
-      background: var(--amber);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      box-shadow: 0 2px 12px rgba(212,148,42,0.4);
-      flex-shrink: 0;
+      width: 46px; height: 46px; background: var(--amber); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+      box-shadow: 0 2px 12px rgba(212,148,42,0.4); flex-shrink: 0;
     }
-    .site-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.7rem;
-      font-weight: 700;
-      color: var(--cream);
-      line-height: 1.1;
-    }
-    .site-subtitle {
-      font-size: 0.75rem;
-      color: var(--green-light);
-      font-weight: 400;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-top: 3px;
-    }
-    .header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .site-title { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 700; color: var(--cream); line-height: 1.1; }
+    .site-subtitle { font-size: 0.75rem; color: var(--green-light); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .live-badge {
       display: flex; align-items: center; gap: 6px;
-      background: rgba(74,140,82,0.2);
-      border: 1px solid rgba(123,191,130,0.3);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 0.7rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--green-light);
+      background: rgba(74,140,82,0.2); border: 1px solid rgba(123,191,130,0.3);
+      border-radius: 20px; padding: 4px 12px; font-size: 0.7rem; font-weight: 500;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--green-light);
     }
-    .live-dot {
-      width: 7px; height: 7px;
-      background: #5cdd6a;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
+    .live-dot { width: 7px; height: 7px; background: #5cdd6a; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);} }
+    .update-timer { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: rgba(245,240,232,0.35); }
+
+    /* Page tabs */
+    .page-tabs {
+      display: flex; gap: 0;
+      padding: 0 48px;
+      border-bottom: 1px solid rgba(123,191,130,0.15);
+      background: rgba(0,0,0,0.1);
     }
-    @keyframes pulse {
-      0%,100% { opacity:1; transform:scale(1); }
-      50% { opacity:0.5; transform:scale(0.8); }
+    .tab-btn {
+      padding: 14px 24px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem; font-weight: 500;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      color: rgba(245,240,232,0.4);
+      background: none; border: none; border-bottom: 2px solid transparent;
+      cursor: pointer; transition: color 0.2s, border-color 0.2s;
+      margin-bottom: -1px;
     }
-    .update-timer {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.7rem;
-      color: rgba(245,240,232,0.35);
+    .tab-btn:hover { color: var(--green-light); }
+    .tab-btn.active { color: var(--cream); border-bottom-color: var(--amber); }
+    .tab-btn .tab-icon { margin-right: 6px; }
+
+    /* Auto-rotate progress bar */
+    .rotate-bar-wrap {
+      height: 2px; background: rgba(123,191,130,0.1); position: relative; overflow: hidden;
+    }
+    .rotate-bar {
+      height: 100%; background: var(--amber);
+      width: 0%; transition: none;
     }
 
     /* Main */
-    main { padding: 36px 48px 60px; }
+    main { padding: 28px 48px 60px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
     .section-label {
-      font-size: 0.68rem;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--green-light);
-      margin-bottom: 22px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--green-light); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
     }
-    .section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: rgba(123,191,130,0.2);
+    .section-label::after { content:''; flex:1; height:1px; background:rgba(123,191,130,0.2); }
+    .section-label .label-time {
+      font-family: 'DM Mono', monospace;
+      color: rgba(245,240,232,0.3); font-size: 0.65rem; text-transform: none; letter-spacing: 0.04em;
     }
 
     /* Loading */
@@ -120,128 +108,77 @@
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; padding: 80px 0; gap: 18px; color: var(--green-light);
     }
-    .spinner {
-      width: 38px; height: 38px;
-      border: 3px solid rgba(123,191,130,0.2);
-      border-top-color: var(--green-light);
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width: 38px; height: 38px; border: 3px solid rgba(123,191,130,0.2); border-top-color: var(--green-light); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg);} }
 
-    /* Cards grid */
-    #cards-grid {
+    /* Cards grid — 3 cols = 6 cards per page */
+    .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-      gap: 22px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
     }
+
     .bird-card {
-      background: var(--card-bg);
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: var(--shadow);
-      display: flex; flex-direction: column;
-      color: var(--text-dark);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      animation: cardIn 0.4s ease both;
+      background: var(--card-bg); border-radius: 16px; overflow: hidden;
+      box-shadow: var(--shadow); display: flex; flex-direction: column;
+      color: var(--text-dark); transition: transform 0.25s ease, box-shadow 0.25s ease;
+      animation: cardIn 0.35s ease both;
     }
-    @keyframes cardIn {
-      from { opacity:0; transform:translateY(14px); }
-      to   { opacity:1; transform:translateY(0); }
-    }
-    .bird-card:hover { transform: translateY(-4px); box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
+    @keyframes cardIn { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
+    .bird-card:hover { transform: translateY(-3px); box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
     .bird-card.just-spotted { outline: 2px solid var(--amber); outline-offset: -1px; }
 
-    .card-image-wrap {
-      position: relative; height: 200px; overflow: hidden;
-      background: var(--cream-dark);
-    }
-    .card-image-wrap img {
-      width: 100%; height: 100%; object-fit: cover; display: block;
-      transition: transform 0.5s ease;
-    }
-    .bird-card:hover .card-image-wrap img { transform: scale(1.04); }
-    .img-placeholder {
-      width: 100%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 3rem; color: var(--green-mid); background: var(--cream-dark);
-    }
+    .card-image-wrap { position:relative; height:170px; overflow:hidden; background:var(--cream-dark); }
+    .card-image-wrap img { width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s ease; }
+    .bird-card:hover .card-image-wrap img { transform:scale(1.04); }
+    .img-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--green-mid); }
+
     .new-badge {
-      position: absolute; top: 12px; left: 12px;
-      background: var(--amber); color: #fff;
-      font-size: 0.63rem; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      padding: 4px 10px; border-radius: 20px;
-      box-shadow: 0 2px 8px rgba(212,148,42,0.5);
-      display: flex; align-items: center; gap: 5px;
+      position:absolute;top:10px;left:10px;background:var(--amber);color:#fff;
+      font-size:0.6rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+      padding:3px 9px;border-radius:20px;box-shadow:0 2px 8px rgba(212,148,42,0.5);
+      display:flex;align-items:center;gap:4px;
     }
-    .new-badge::before {
-      content: ''; width: 6px; height: 6px;
-      background: #fff; border-radius: 50%;
-      animation: pulse 1.4s infinite;
-    }
+    .new-badge::before{content:'';width:5px;height:5px;background:#fff;border-radius:50%;animation:pulse 1.4s infinite;}
+
     .count-chip {
-      position: absolute; bottom: 12px; right: 12px;
-      background: rgba(26,51,32,0.82); color: var(--green-light);
-      font-family: 'DM Mono', monospace; font-size: 0.7rem;
-      padding: 3px 9px; border-radius: 20px; backdrop-filter: blur(4px);
+      position:absolute;bottom:10px;right:10px;background:rgba(26,51,32,0.82);
+      color:var(--green-light);font-family:'DM Mono',monospace;font-size:0.68rem;
+      padding:2px 8px;border-radius:20px;backdrop-filter:blur(4px);
     }
 
-    .card-body { padding: 18px 20px 16px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
-
-    .bird-names .common {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.22rem; font-weight: 700;
-      color: var(--green-deep); line-height: 1.2;
-    }
-    .bird-names .scientific { font-size: 0.78rem; color: var(--text-mid); font-style: italic; margin-top: 3px; }
-
-    .ts-label, .timeline-label {
-      font-size: 0.65rem; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--green-bright); margin-bottom: 7px;
-    }
-    .ts-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
-    .ts-list li {
-      font-family: 'DM Mono', monospace; font-size: 0.76rem;
-      color: var(--text-mid); padding: 4px 8px;
-      background: var(--cream); border-radius: 6px;
-      border-left: 3px solid var(--green-light);
-    }
-    .ts-list li:first-child { border-left-color: var(--amber); color: var(--text-dark); font-weight: 500; }
-
-    .timeline-wrap { height: 78px; position: relative; }
-
-    /* Controls */
-    .controls {
-      margin-top: 34px; display: flex;
-      align-items: center; justify-content: center; gap: 16px;
-    }
-    .page-info {
-      font-size: 0.76rem; color: rgba(245,240,232,0.5);
-      font-family: 'DM Mono', monospace; min-width: 130px; text-align: center;
-    }
-    .auto-chip { font-size: 0.68rem; color: rgba(245,240,232,0.3); font-family: 'DM Mono', monospace; }
-    .ctrl-btn {
-      background: rgba(74,140,82,0.2); border: 1px solid rgba(123,191,130,0.3);
-      color: var(--cream); font-family: 'DM Sans', sans-serif;
-      font-size: 0.82rem; font-weight: 500; padding: 9px 22px;
-      border-radius: 8px; cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-    }
-    .ctrl-btn:hover:not(:disabled) { background: rgba(74,140,82,0.4); border-color: rgba(123,191,130,0.6); }
-    .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
-
-    footer {
-      text-align: center; padding: 22px 48px;
-      border-top: 1px solid rgba(123,191,130,0.1);
-      font-size: 0.7rem; color: rgba(245,240,232,0.22); letter-spacing: 0.04em;
+    .rank-chip {
+      position:absolute;top:10px;right:10px;
+      background:rgba(26,51,32,0.85);color:var(--amber);
+      font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:600;
+      padding:3px 9px;border-radius:20px;backdrop-filter:blur(4px);
     }
 
-    @media (max-width: 640px) {
-      header { padding: 18px 18px 14px; flex-direction: column; align-items: flex-start; gap: 12px; }
-      main { padding: 22px 14px 48px; }
-      #cards-grid { grid-template-columns: 1fr; }
+    .card-body { padding:14px 16px 14px; flex:1; display:flex; flex-direction:column; gap:10px; }
+    .bird-names .common { font-family:'Playfair Display',serif; font-size:1.08rem; font-weight:700; color:var(--green-deep); line-height:1.2; }
+    .bird-names .scientific { font-size:0.73rem; color:var(--text-mid); font-style:italic; margin-top:2px; }
+
+    .ts-label, .timeline-label { font-size:0.62rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green-bright);margin-bottom:5px; }
+    .ts-list { list-style:none;display:flex;flex-direction:column;gap:3px; }
+    .ts-list li { font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-mid);padding:3px 7px;background:var(--cream);border-radius:5px;border-left:3px solid var(--green-light); }
+    .ts-list li:first-child { border-left-color:var(--amber);color:var(--text-dark);font-weight:500; }
+
+    .sighting-count-bar { display:flex;align-items:center;gap:8px; }
+    .bar-track { flex:1; height:6px; background:var(--cream-dark); border-radius:3px; overflow:hidden; }
+    .bar-fill { height:100%; background:var(--amber); border-radius:3px; transition:width 0.6s ease; }
+    .bar-num { font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-mid);min-width:32px;text-align:right; }
+
+    .timeline-wrap { height:68px; position:relative; }
+
+    footer { text-align:center;padding:20px 48px;border-top:1px solid rgba(123,191,130,0.1);font-size:0.7rem;color:rgba(245,240,232,0.2);letter-spacing:0.04em; }
+
+    @media(max-width:900px){
+      .cards-grid{grid-template-columns:repeat(2,1fr);}
+      header,.page-tabs,main{padding-left:20px;padding-right:20px;}
+    }
+    @media(max-width:560px){
+      .cards-grid{grid-template-columns:1fr;}
+      .tab-btn{padding:12px 14px;font-size:0.7rem;}
     }
   </style>
 </head>
@@ -252,236 +189,276 @@
     <div class="bird-icon">🐦</div>
     <div>
       <div class="site-title">Drew's Backyard Birds</div>
-      <div class="site-subtitle">Live Feeder Observations · Last 8 Hours</div>
+      <div class="site-subtitle">Live Feeder Observations · HaikuBox</div>
     </div>
   </div>
-  <div class="header-meta">
+  <div class="header-right">
     <div class="live-badge"><span class="live-dot"></span> Live</div>
-    <div class="update-timer" id="next-update">Next refresh in 5:00</div>
+    <div class="update-timer" id="next-update">Refreshing in 5:00</div>
   </div>
 </header>
 
-<main>
-  <div class="section-label">Spotted Today</div>
+<!-- Tab bar -->
+<div class="page-tabs">
+  <button class="tab-btn active" onclick="goToView(0)" id="tab-0"><span class="tab-icon">🕐</span>Just Spotted</button>
+  <button class="tab-btn" onclick="goToView(1)" id="tab-1"><span class="tab-icon">📊</span>Top · 1 Hour</button>
+  <button class="tab-btn" onclick="goToView(2)" id="tab-2"><span class="tab-icon">📊</span>Top · 6 Hours</button>
+  <button class="tab-btn" onclick="goToView(3)" id="tab-3"><span class="tab-icon">📊</span>Top · 24 Hours</button>
+</div>
+<div class="rotate-bar-wrap"><div class="rotate-bar" id="rotate-bar"></div></div>
 
+<main>
   <div id="loading-state">
     <div class="spinner"></div>
-    <span style="font-size:0.83rem; letter-spacing:0.06em;">Listening for birds…</span>
+    <span style="font-size:0.83rem;letter-spacing:0.06em;">Listening for birds…</span>
   </div>
 
-  <div id="cards-grid" style="display:none;"></div>
+  <!-- View 0: Most recent 6 sightings -->
+  <div class="view" id="view-0">
+    <div class="section-label">Most Recent Sightings <span class="label-time" id="label-0"></span></div>
+    <div class="cards-grid" id="grid-0"></div>
+  </div>
 
-  <div class="controls" id="controls" style="display:none;">
-    <button class="ctrl-btn" id="btn-prev" onclick="changePage(-1)">← Prev</button>
-    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-      <div class="page-info" id="page-info"></div>
-      <div class="auto-chip">Auto-advances every 15s</div>
-    </div>
-    <button class="ctrl-btn" id="btn-next" onclick="changePage(1)">Next →</button>
+  <!-- View 1: Top birds last 1 hour -->
+  <div class="view" id="view-1">
+    <div class="section-label">Most Seen · Last Hour <span class="label-time" id="label-1"></span></div>
+    <div class="cards-grid" id="grid-1"></div>
+  </div>
+
+  <!-- View 2: Top birds last 6 hours -->
+  <div class="view" id="view-2">
+    <div class="section-label">Most Seen · Last 6 Hours <span class="label-time" id="label-2"></span></div>
+    <div class="cards-grid" id="grid-2"></div>
+  </div>
+
+  <!-- View 3: Top birds last 24 hours -->
+  <div class="view" id="view-3">
+    <div class="section-label">Most Seen · Last 24 Hours <span class="label-time" id="label-3"></span></div>
+    <div class="cards-grid" id="grid-3"></div>
   </div>
 </main>
 
-<footer>Powered by HaikuBox · Wikipedia · Data refreshes every 5 minutes</footer>
+<footer>Powered by HaikuBox · Wikipedia · Rotates every 20 seconds · Refreshes every 5 minutes</footer>
 
 <script>
-  const PAGE_SIZE = 3;
-  let allDetections = [];
-  let currentPage = 0;
-  let refreshCountdown = 300;
-  let countdownInterval, autoPageInterval;
+  /* ── Config ── */
+  const BOX_ID = '3485189D1828';
+  const PAGE_SIZE = 6;
+  const ROTATE_MS = 20000;   // 20s per view
+  const REFRESH_MS = 300000; // 5 min data refresh
 
+  /* ── State ── */
+  let allDetections = [];   // raw from API (last 24h)
+  let currentView = 0;
+  let rotateInterval, countdownInterval, rotateBarInterval;
+  let rotateBarStart = null;
+  let refreshCountdown = REFRESH_MS / 1000;
+  const wikiCache = {};
+
+  /* ── Countdown display ── */
   function startCountdown() {
     clearInterval(countdownInterval);
-    refreshCountdown = 300;
+    refreshCountdown = REFRESH_MS / 1000;
     countdownInterval = setInterval(() => {
       refreshCountdown--;
       const m = Math.floor(refreshCountdown / 60);
       const s = String(refreshCountdown % 60).padStart(2, '0');
-      document.getElementById('next-update').textContent = `Next refresh in ${m}:${s}`;
-      if (refreshCountdown <= 0) { clearInterval(countdownInterval); fetchDetections(); }
+      document.getElementById('next-update').textContent = `Refreshing in ${m}:${s}`;
+      if (refreshCountdown <= 0) { clearInterval(countdownInterval); fetchData(); }
     }, 1000);
   }
 
-  async function fetchDetections() {
+  /* ── Rotate progress bar ── */
+  function startRotateBar() {
+    const bar = document.getElementById('rotate-bar');
+    clearInterval(rotateBarInterval);
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    setTimeout(() => {
+      bar.style.transition = `width ${ROTATE_MS}ms linear`;
+      bar.style.width = '100%';
+    }, 30);
+  }
+
+  /* ── Auto-rotate views ── */
+  function startRotate() {
+    clearInterval(rotateInterval);
+    startRotateBar();
+    rotateInterval = setInterval(() => {
+      currentView = (currentView + 1) % 4;
+      showView(currentView);
+      startRotateBar();
+    }, ROTATE_MS);
+  }
+
+  function goToView(idx) {
+    currentView = idx;
+    showView(idx);
+    startRotate(); // reset timer on manual tab click
+  }
+
+  function showView(idx) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    document.getElementById(`view-${idx}`).classList.add('active');
+    document.getElementById(`tab-${idx}`).classList.add('active');
+  }
+
+  /* ── Fetch data ── */
+  async function fetchData() {
     try {
-      const res = await fetch('https://api.haikubox.com/haikubox/3485189D1828/detections?hours=24');
+      const res = await fetch(`https://api.haikubox.com/haikubox/${BOX_ID}/detections?hours=24`);
       const data = await res.json();
-      const now = new Date();
-      const cutoff = new Date(now.getTime() - 8 * 60 * 60 * 1000);
-      const grouped = {};
-      const firstSeen = {};
-
-      for (const d of data.detections) {
-        const dt = new Date(d.dt);
-        if (dt < cutoff) continue;
-        if (!grouped[d.cn]) grouped[d.cn] = { cn: d.cn, sn: d.sn, timestamps: [] };
-        grouped[d.cn].timestamps.push(dt);
-        if (!firstSeen[d.sn] || dt < firstSeen[d.sn]) firstSeen[d.sn] = dt;
-      }
-
-      allDetections = Object.values(grouped)
-        .filter(b => b.timestamps.length > 1)
-        .sort((a, b) => Math.max(...b.timestamps) - Math.max(...a.timestamps));
-
-      for (const bird of allDetections) {
-        bird.justSpotted = (now - firstSeen[bird.sn]) < 30 * 60 * 1000;
-      }
-
-      currentPage = 0;
-      renderPage();
-      startAutoPage();
+      allDetections = data.detections.map(d => ({ ...d, dt: new Date(d.dt) }));
+      await buildAllViews();
+      document.getElementById('loading-state').style.display = 'none';
+      showView(currentView);
+      startRotate();
       startCountdown();
-    } catch (err) { console.error('Fetch error:', err); }
+    } catch(err) { console.error('Fetch error:', err); }
   }
 
-  function startAutoPage() {
-    clearInterval(autoPageInterval);
-    autoPageInterval = setInterval(() => {
-      const total = Math.ceil(allDetections.length / PAGE_SIZE);
-      currentPage = (currentPage + 1) % total;
-      renderPage();
-    }, 15000);
+  /* ── Build all 4 views ── */
+  async function buildAllViews() {
+    const now = new Date();
+
+    // View 0: 6 most recent individual sightings (unique species, most recent first)
+    const recentSeen = {};
+    const sorted = [...allDetections].sort((a,b) => b.dt - a.dt);
+    for (const d of sorted) {
+      if (!recentSeen[d.cn]) recentSeen[d.cn] = d;
+      if (Object.keys(recentSeen).length >= PAGE_SIZE) break;
+    }
+    const recentBirds = Object.values(recentSeen).slice(0, PAGE_SIZE);
+    document.getElementById('label-0').textContent = `· as of ${now.toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'})}`;
+    await renderRecentGrid('grid-0', recentBirds);
+
+    // Views 1–3: top birds by sighting count within window
+    const windows = [1, 6, 24];
+    for (let wi = 0; wi < windows.length; wi++) {
+      const hours = windows[wi];
+      const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
+      const grouped = groupBySpecies(allDetections.filter(d => d.dt >= cutoff));
+      const top = Object.values(grouped)
+        .sort((a,b) => b.timestamps.length - a.timestamps.length)
+        .slice(0, PAGE_SIZE);
+      document.getElementById(`label-${wi+1}`).textContent = `· ${top.reduce((s,b)=>s+b.timestamps.length,0)} total sightings`;
+      await renderTopGrid(`grid-${wi+1}`, top, hours);
+    }
   }
 
-  function changePage(dir) {
-    const total = Math.ceil(allDetections.length / PAGE_SIZE);
-    currentPage = Math.max(0, Math.min(total - 1, currentPage + dir));
-    renderPage();
-    startAutoPage();
+  function groupBySpecies(detections) {
+    const grouped = {};
+    for (const d of detections) {
+      if (!grouped[d.cn]) grouped[d.cn] = { cn: d.cn, sn: d.sn, timestamps: [] };
+      grouped[d.cn].timestamps.push(d.dt);
+    }
+    return grouped;
   }
 
-  async function renderPage() {
-    const grid = document.getElementById('cards-grid');
-    const loading = document.getElementById('loading-state');
-    const controls = document.getElementById('controls');
-    const total = Math.ceil(allDetections.length / PAGE_SIZE);
-
-    loading.style.display = 'none';
-    grid.style.display = 'grid';
-    controls.style.display = total > 1 ? 'flex' : 'none';
-
-    document.getElementById('page-info').textContent =
-      `Page ${currentPage + 1} of ${total}  ·  ${allDetections.length} species`;
-    document.getElementById('btn-prev').disabled = currentPage === 0;
-    document.getElementById('btn-next').disabled = currentPage >= total - 1;
-
+  /* ── Render view 0 (recent) ── */
+  async function renderRecentGrid(gridId, birds) {
+    const grid = document.getElementById(gridId);
     grid.innerHTML = '';
-    const slice = allDetections.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
-
-    for (let i = 0; i < slice.length; i++) {
-      const card = await buildCard(slice[i], i);
-      card.style.animationDelay = `${i * 0.08}s`;
+    const now = new Date();
+    for (let i = 0; i < birds.length; i++) {
+      const d = birds[i];
+      const justSpotted = (now - d.dt) < 30 * 60 * 1000;
+      const imgUrl = await getWikiImage(d.sn);
+      const card = document.createElement('div');
+      card.className = 'bird-card' + (justSpotted ? ' just-spotted' : '');
+      card.style.animationDelay = `${i * 0.06}s`;
+      card.innerHTML = `
+        <div class="card-image-wrap">
+          ${imgUrl ? `<img src="${imgUrl}" alt="${d.sn}" onerror="this.parentElement.innerHTML='<div class=img-placeholder>🐦</div>'">` : '<div class="img-placeholder">🐦</div>'}
+          ${justSpotted ? '<div class="new-badge">Just Spotted</div>' : ''}
+          <div class="count-chip">${timeAgo(d.dt)}</div>
+        </div>
+        <div class="card-body">
+          <div class="bird-names">
+            <div class="common">${d.cn}</div>
+            <div class="scientific">${d.sn}</div>
+          </div>
+          <div>
+            <div class="ts-label">Last Seen</div>
+            <ul class="ts-list">
+              <li>${d.dt.toLocaleString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true,month:'short',day:'numeric'})}</li>
+            </ul>
+          </div>
+        </div>`;
       grid.appendChild(card);
-      drawTimeline(`tl-${i}`, slice[i].timestamps);
     }
   }
 
-  async function buildCard(bird, idx) {
-    const { cn, sn, timestamps, justSpotted } = bird;
-    const sorted = [...timestamps].sort((a, b) => b - a);
-    const imgUrl = await fetchWikiImage(sn);
-
-    const card = document.createElement('div');
-    card.className = 'bird-card' + (justSpotted ? ' just-spotted' : '');
-
-    const imgWrap = document.createElement('div');
-    imgWrap.className = 'card-image-wrap';
-    if (imgUrl) {
-      const img = document.createElement('img');
-      img.src = imgUrl; img.alt = sn;
-      img.onerror = () => { imgWrap.innerHTML = '<div class="img-placeholder">🐦</div>'; };
-      imgWrap.appendChild(img);
-    } else {
-      imgWrap.innerHTML = '<div class="img-placeholder">🐦</div>';
+  /* ── Render views 1–3 (top by count) ── */
+  async function renderTopGrid(gridId, birds, hours) {
+    const grid = document.getElementById(gridId);
+    grid.innerHTML = '';
+    const maxCount = birds[0]?.timestamps.length || 1;
+    for (let i = 0; i < birds.length; i++) {
+      const bird = birds[i];
+      const sorted = [...bird.timestamps].sort((a,b) => b - a);
+      const imgUrl = await getWikiImage(bird.sn);
+      const pct = Math.round((bird.timestamps.length / maxCount) * 100);
+      const card = document.createElement('div');
+      card.className = 'bird-card';
+      card.style.animationDelay = `${i * 0.06}s`;
+      card.innerHTML = `
+        <div class="card-image-wrap">
+          ${imgUrl ? `<img src="${imgUrl}" alt="${bird.sn}" onerror="this.parentElement.innerHTML='<div class=img-placeholder>🐦</div>'">` : '<div class="img-placeholder">🐦</div>'}
+          <div class="rank-chip">#${i+1}</div>
+          <div class="count-chip">${bird.timestamps.length} seen</div>
+        </div>
+        <div class="card-body">
+          <div class="bird-names">
+            <div class="common">${bird.cn}</div>
+            <div class="scientific">${bird.sn}</div>
+          </div>
+          <div>
+            <div class="ts-label">Sightings (last ${hours}h)</div>
+            <div class="sighting-count-bar">
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+              <div class="bar-num">${bird.timestamps.length}×</div>
+            </div>
+          </div>
+          <div>
+            <div class="ts-label">Most Recent</div>
+            <ul class="ts-list">
+              ${sorted.slice(0,3).map(ts=>`<li>${ts.toLocaleString('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit',hour12:true,month:'short',day:'numeric'})}</li>`).join('')}
+            </ul>
+          </div>
+        </div>`;
+      grid.appendChild(card);
     }
-    if (justSpotted) {
-      const badge = document.createElement('div');
-      badge.className = 'new-badge';
-      badge.textContent = 'Just Spotted';
-      imgWrap.appendChild(badge);
-    }
-    const chip = document.createElement('div');
-    chip.className = 'count-chip';
-    chip.textContent = `${sorted.length} sighting${sorted.length !== 1 ? 's' : ''}`;
-    imgWrap.appendChild(chip);
-    card.appendChild(imgWrap);
-
-    const body = document.createElement('div');
-    body.className = 'card-body';
-
-    const names = document.createElement('div');
-    names.className = 'bird-names';
-    names.innerHTML = `<div class="common">${cn}</div><div class="scientific">${sn}</div>`;
-    body.appendChild(names);
-
-    const tsSection = document.createElement('div');
-    tsSection.innerHTML = `<div class="ts-label">Recent Sightings</div>`;
-    const tsList = document.createElement('ul');
-    tsList.className = 'ts-list';
-    sorted.slice(0, 5).forEach(ts => {
-      const li = document.createElement('li');
-      li.textContent = ts.toLocaleString('en-US', {
-        timeZone: 'America/Chicago', hour: 'numeric',
-        minute: '2-digit', hour12: true, month: 'short', day: 'numeric'
-      });
-      tsList.appendChild(li);
-    });
-    tsSection.appendChild(tsList);
-    body.appendChild(tsSection);
-
-    const tlSection = document.createElement('div');
-    tlSection.innerHTML = `<div class="timeline-label">Activity (last 8h)</div><div class="timeline-wrap"><canvas id="tl-${idx}"></canvas></div>`;
-    body.appendChild(tlSection);
-
-    card.appendChild(body);
-    return card;
   }
 
-  async function fetchWikiImage(sn) {
+  /* ── Wikipedia image with cache ── */
+  async function getWikiImage(sn) {
+    if (wikiCache[sn] !== undefined) return wikiCache[sn];
     try {
       const s = await fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&origin=*&search=${encodeURIComponent(sn)}&limit=1`);
       const sd = await s.json();
-      if (!sd[1][0]) return null;
+      if (!sd[1][0]) { wikiCache[sn] = null; return null; }
       const p = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(sd[1][0])}`);
       const pd = await p.json();
-      return pd.thumbnail ? pd.thumbnail.source : null;
-    } catch { return null; }
+      const url = pd.thumbnail ? pd.thumbnail.source : null;
+      wikiCache[sn] = url;
+      return url;
+    } catch { wikiCache[sn] = null; return null; }
   }
 
-  function drawTimeline(canvasId, timestamps) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    const cutoff = new Date(Date.now() - 8 * 60 * 60 * 1000);
-    const points = timestamps.map(ts => ({
-      x: (ts - cutoff) / (60 * 60 * 1000),
-      y: 0
-    }));
-    new Chart(canvas.getContext('2d'), {
-      type: 'scatter',
-      data: { datasets: [{ data: points, pointBackgroundColor: '#d4942a', pointBorderColor: '#d4942a', pointRadius: 5, pointHoverRadius: 7, showLine: false }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 400 },
-        scales: {
-          x: {
-            type: 'linear', min: 0, max: 8,
-            title: { display: true, text: 'Hours Ago', color: '#888', font: { size: 9, family: 'DM Mono' } },
-            ticks: { stepSize: 1, color: '#aaa', font: { size: 9 }, callback: v => v === 8 ? '8h' : v === 0 ? 'Now' : `${8-v}h` },
-            grid: { color: 'rgba(0,0,0,0.06)' }
-          },
-          y: { display: false }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: { callbacks: { label: ctx => { const h = (8 - ctx.parsed.x).toFixed(1); return h === '0.0' ? 'Just now' : `${h}h ago`; } } }
-        }
-      }
-    });
+  /* ── Helpers ── */
+  function timeAgo(dt) {
+    const mins = Math.round((Date.now() - dt) / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    return `${Math.round(mins/60)}h ago`;
   }
 
+  /* ── Init ── */
   document.addEventListener('DOMContentLoaded', () => {
-    fetchDetections();
-    setInterval(fetchDetections, 300000);
+    fetchData();
+    setInterval(fetchData, REFRESH_MS);
   });
 </script>
 </body>
