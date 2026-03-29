@@ -382,14 +382,13 @@
 <script>
   /* ── Config ── */
   const BOX_ID = '3485189D1828';
-  const CARD_SLOT = 2;       // cards visible at once on mobile; 6 on iPad/desktop
-  const FLIP_MS  = 5000;     // ms each batch of cards shows
-  const REFRESH_MS = 300000; // 5 min data refresh
+  const FLIP_MS   = 5000;  // ms per batch on mobile (2 cards)
+  const VIEW_MS   = 20000; // ms per full view on desktop (6 cards)
+  const REFRESH_MS = 300000;
   const NUM_VIEWS = 4;
 
   /* ── Device detection ── */
   function isIPad() {
-    // iPad on iOS 13+ reports as MacIntel with touch support
     return /iPad/.test(navigator.userAgent) ||
            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
@@ -397,13 +396,12 @@
     return /iPhone|Android/.test(navigator.userAgent) && !isIPad();
   }
   function getCardSlot() {
-    // iPad: show 6 at once (no flipping needed, just rotate views)
-    // Phone: show 2 at a time
-    // Desktop: show 6 at once
     return isPhone() ? 2 : 6;
   }
-  function getMaxCards() {
-    return isPhone() ? 6 : 6; // always fetch 6, display varies
+  // How long each "tick" should wait — phones flip batches every 5s,
+  // desktop/iPad shows all 6 for 20s then rotates to next view
+  function getTickMs() {
+    return isPhone() ? FLIP_MS : VIEW_MS;
   }
 
   /* ── State ── */
@@ -451,8 +449,9 @@
 
   function scheduleNextTick() {
     clearTimeout(flipTimer);
-    flipTimer = setTimeout(tick, FLIP_MS);
-    animateBar(FLIP_MS);
+    const ms = getTickMs();
+    flipTimer = setTimeout(tick, ms);
+    animateBar(ms);
   }
 
   function tick() {
