@@ -21,6 +21,7 @@
       --shadow: 0 4px 32px rgba(0,0,0,0.18);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: 'DM Sans', sans-serif;
       background-color: var(--green-deep);
@@ -30,13 +31,16 @@
         url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a8c52' fill-opacity='0.07'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       min-height: 100vh;
       color: var(--cream);
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Header */
+    /* ── Header ── */
     header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 24px 48px 18px;
       border-bottom: 1px solid rgba(123,191,130,0.2);
+      flex-shrink: 0;
     }
     .header-left { display: flex; align-items: center; gap: 16px; }
     .bird-icon {
@@ -57,9 +61,9 @@
     @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);} }
     .update-timer { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: rgba(245,240,232,0.35); }
 
-    /* Page tabs */
+    /* ── Tabs ── */
     .page-tabs {
-      display: flex; gap: 0;
+      display: flex; flex-shrink: 0;
       padding: 0 48px;
       border-bottom: 1px solid rgba(123,191,130,0.15);
       background: rgba(0,0,0,0.1);
@@ -72,26 +76,29 @@
       color: rgba(245,240,232,0.4);
       background: none; border: none; border-bottom: 2px solid transparent;
       cursor: pointer; transition: color 0.2s, border-color 0.2s;
-      margin-bottom: -1px;
+      margin-bottom: -1px; white-space: nowrap;
     }
     .tab-btn:hover { color: var(--green-light); }
     .tab-btn.active { color: var(--cream); border-bottom-color: var(--amber); }
     .tab-btn .tab-icon { margin-right: 6px; }
 
-    /* Auto-rotate progress bar */
-    .rotate-bar-wrap {
-      height: 2px; background: rgba(123,191,130,0.1); position: relative; overflow: hidden;
-    }
-    .rotate-bar {
-      height: 100%; background: var(--amber);
-      width: 0%; transition: none;
-    }
+    /* ── Progress bar ── */
+    .rotate-bar-wrap { height: 2px; background: rgba(123,191,130,0.1); flex-shrink: 0; overflow: hidden; }
+    .rotate-bar { height: 100%; background: var(--amber); width: 0%; transition: none; }
 
-    /* Main */
-    main { padding: 16px 48px 16px; flex: 1; display: flex; flex-direction: column; min-height: 0; }
-    .view { display: none; }
-    body { display: flex; flex-direction: column; min-height: 100vh; }
+    /* ── Main / Views ── */
+    main {
+      padding: 16px 48px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .view { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    .view.active { display: flex; }
 
+    /* ── Section label ── */
     .section-label {
       font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--green-light); margin-bottom: 12px;
@@ -106,7 +113,7 @@
     .dot { width:6px; height:6px; border-radius:50%; background:rgba(123,191,130,0.3); transition:background 0.3s; }
     .dot.active { background:var(--amber); }
 
-    /* Loading */
+    /* ── Loading ── */
     #loading-state {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; padding: 80px 0; gap: 18px; color: var(--green-light);
@@ -114,13 +121,7 @@
     .spinner { width: 38px; height: 38px; border: 3px solid rgba(123,191,130,0.2); border-top-color: var(--green-light); border-radius: 50%; animation: spin 0.9s linear infinite; }
     @keyframes spin { to{transform:rotate(360deg);} }
 
-    /* Cards grid — fills full vertical height */
-    .view.active {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-      min-height: 0;
-    }
+    /* ── Cards grid ── */
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -130,21 +131,27 @@
       min-height: 0;
     }
 
+    /* ── Bird card ── */
+    /* NOTE: no transform-style:preserve-3d — conflicts with overflow:hidden in Chrome */
     .bird-card {
-      background: var(--card-bg); border-radius: 16px; overflow: hidden;
-      box-shadow: var(--shadow); display: flex; flex-direction: column;
-      color: var(--text-dark); transition: box-shadow 0.25s ease;
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      color: var(--text-dark);
+      transition: box-shadow 0.25s ease;
       min-height: 0;
       position: relative;
-      transform-style: preserve-3d;
     }
     .bird-card:hover { box-shadow: 0 12px 48px rgba(0,0,0,0.22); }
     .bird-card.just-spotted { outline: 2px solid var(--amber); outline-offset: -1px; }
 
     .card-image-wrap { position:relative; flex:1; min-height:0; overflow:hidden; background:var(--cream-dark); }
-    .card-image-wrap img { width:100%; height:100%; object-fit:cover; object-position: center 15%; display:block; transition:transform 0.5s ease; }
+    .card-image-wrap img { width:100%; height:100%; object-fit:cover; object-position:center 15%; display:block; transition:transform 0.5s ease; }
     .bird-card:hover .card-image-wrap img { transform:scale(1.04); }
-    .img-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--green-mid); }
+    .img-placeholder { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--green-mid);background:var(--cream-dark); }
 
     .new-badge {
       position:absolute;top:10px;left:10px;background:var(--amber);color:#fff;
@@ -153,13 +160,11 @@
       display:flex;align-items:center;gap:4px;
     }
     .new-badge::before{content:'';width:5px;height:5px;background:#fff;border-radius:50%;animation:pulse 1.4s infinite;}
-
     .count-chip {
       position:absolute;bottom:10px;right:10px;background:rgba(26,51,32,0.82);
       color:var(--green-light);font-family:'DM Mono',monospace;font-size:0.68rem;
       padding:2px 8px;border-radius:20px;backdrop-filter:blur(4px);
     }
-
     .rank-chip {
       position:absolute;top:10px;right:10px;
       background:rgba(26,51,32,0.85);color:var(--amber);
@@ -167,105 +172,92 @@
       padding:3px 9px;border-radius:20px;backdrop-filter:blur(4px);
     }
 
-    .card-body { padding:10px 14px 12px; flex:0 0 auto; display:flex; flex-direction:column; gap:8px; }
-    .bird-names .common { font-family:'Playfair Display',serif; font-size:1.08rem; font-weight:700; color:var(--green-deep); line-height:1.2; }
-    .bird-names .scientific { font-size:0.73rem; color:var(--text-mid); font-style:italic; margin-top:2px; }
-
-    .ts-label, .timeline-label { font-size:0.62rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--green-bright);margin-bottom:5px; }
-    .ts-list { list-style:none;display:flex;flex-direction:column;gap:3px; }
-    .ts-list li { font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-mid);padding:3px 7px;background:var(--cream);border-radius:5px;border-left:3px solid var(--green-light); }
-    .ts-list li:first-child { border-left-color:var(--amber);color:var(--text-dark);font-weight:500; }
-
-    .sighting-count-bar { display:flex;align-items:center;gap:8px; }
-    .bar-track { flex:1; height:6px; background:var(--cream-dark); border-radius:3px; overflow:hidden; }
+    /* ── Card body ── */
+    .card-body { padding:8px 12px 10px; flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }
+    .bird-names .common { font-family:'Playfair Display',serif; font-size:0.95rem; font-weight:700; color:var(--green-deep); line-height:1.2; }
+    .bird-names .scientific { font-size:0.68rem; color:var(--text-mid); font-style:italic; margin-top:1px; }
+    .ts-label { font-size:0.58rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--green-bright); margin-bottom:3px; }
+    .ts-list { list-style:none; display:flex; flex-direction:column; gap:2px; }
+    .ts-list li { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--text-mid); padding:2px 6px; background:var(--cream); border-radius:5px; border-left:3px solid var(--green-light); }
+    .ts-list li:first-child { border-left-color:var(--amber); color:var(--text-dark); font-weight:500; }
+    .sighting-count-bar { display:flex; align-items:center; gap:6px; }
+    .bar-track { flex:1; height:5px; background:var(--cream-dark); border-radius:3px; overflow:hidden; }
     .bar-fill { height:100%; background:var(--amber); border-radius:3px; transition:width 0.6s ease; }
-    .bar-num { font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--text-mid);min-width:32px;text-align:right; }
+    .bar-num { font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--text-mid); min-width:26px; text-align:right; }
 
-    .timeline-wrap { height:68px; position:relative; }
+    /* ── Footer ── */
+    footer { text-align:center; padding:10px 48px; border-top:1px solid rgba(123,191,130,0.1); font-size:0.7rem; color:rgba(245,240,232,0.2); letter-spacing:0.04em; flex-shrink:0; }
 
-    footer { text-align:center;padding:10px 48px;border-top:1px solid rgba(123,191,130,0.1);font-size:0.7rem;color:rgba(245,240,232,0.2);letter-spacing:0.04em;flex-shrink:0; }
+    /* ── Portrait overlay ── */
+    #portrait-overlay {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: var(--green-deep);
+      background-image: radial-gradient(ellipse at 50% 30%, rgba(74,140,82,0.3) 0%, transparent 60%);
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 28px; text-align: center; padding: 40px;
+    }
+    @media (orientation: portrait) and (max-width: 500px) {
+      #portrait-overlay { display: flex; }
+    }
+    .rotate-phone-icon { font-size: 4rem; animation: rotateHint 2.5s ease-in-out infinite; }
+    @keyframes rotateHint {
+      0%,100% { transform: rotate(0deg); }
+      30%,60% { transform: rotate(-90deg); }
+    }
+    .portrait-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--cream); }
+    .portrait-sub { font-size: 0.82rem; color: var(--green-light); letter-spacing: 0.06em; line-height: 1.6; }
+    .portrait-birds { font-size: 2rem; letter-spacing: 0.2em; animation: floatBirds 3s ease-in-out infinite alternate; }
+    @keyframes floatBirds { from{transform:translateY(0);}to{transform:translateY(-8px);} }
 
-    /* ── Condense card details globally ── */
-    .card-body { padding: 8px 12px 10px; flex:0 0 auto; display:flex; flex-direction:column; gap:5px; }
-    .bird-names .common { font-size: 0.95rem; }
-    .bird-names .scientific { font-size: 0.68rem; margin-top: 1px; }
-    .ts-label, .timeline-label { font-size: 0.58rem; margin-bottom: 3px; }
-    .ts-list { gap: 2px; }
-    .ts-list li { font-size: 0.68rem; padding: 2px 6px; }
-    .sighting-count-bar { gap: 6px; }
-    .bar-track { height: 5px; }
-    .bar-num { font-size: 0.68rem; min-width: 26px; }
-
-    /* ── Landscape phone: 2 cards, 1 row ── */
-    @media (max-width: 900px) and (orientation: landscape) {
-      header { padding: 8px 16px; }
-      .bird-icon { width: 30px; height: 30px; font-size: 14px; }
-      .site-title { font-size: 1rem; }
+    /* ── Landscape phone (≤767px wide): 2 cards ── */
+    @media (max-width: 767px) and (orientation: landscape) {
+      header { padding: 6px 14px; }
+      .bird-icon { width: 28px; height: 28px; font-size: 13px; }
+      .site-title { font-size: 0.95rem; }
       .site-subtitle { display: none; }
-      .live-badge { padding: 2px 8px; font-size: 0.6rem; }
-      .update-timer { font-size: 0.58rem; }
-      .page-tabs { padding: 0 16px; }
-      .tab-btn { padding: 7px 10px; font-size: 0.6rem; }
-      .tab-btn .tab-icon { margin-right: 3px; }
-      main { padding: 6px 12px 4px; }
-      .section-label { margin-bottom: 4px; font-size: 0.58rem; }
-      .view.active {
-        height: auto;
-        flex: 1;
-        min-height: 0;
-      }
+      .live-badge { padding: 2px 7px; font-size: 0.58rem; }
+      .update-timer { display: none; }
+      .page-tabs { padding: 0 14px; }
+      .tab-btn { padding: 6px 9px; font-size: 0.58rem; }
+      .tab-btn .tab-icon { display: none; }
+      main { padding: 5px 10px 4px; }
+      .section-label { margin-bottom: 4px; font-size: 0.55rem; }
       .cards-grid {
         grid-template-columns: repeat(2, 1fr);
         grid-template-rows: 1fr;
         gap: 8px;
-        flex: 1;
-        min-height: 0;
-        align-items: stretch;
       }
-      .bird-card {
-        min-height: 0;
-        height: 100%;
-      }
-      .card-body { padding: 5px 8px 7px; gap: 3px; }
-      .bird-names .common { font-size: 0.78rem; }
-      .bird-names .scientific { font-size: 0.6rem; }
-      .ts-label { font-size: 0.52rem; margin-bottom: 1px; }
-      .ts-list li { font-size: 0.58rem; padding: 2px 4px; }
-      .ts-list li:nth-child(n+3) { display: none; }
-      .bar-num { font-size: 0.58rem; }
-      footer { padding: 4px 16px; font-size: 0.58rem; }
+      .card-body { padding: 4px 7px 6px; gap: 2px; }
+      .bird-names .common { font-size: 0.72rem; }
+      .bird-names .scientific { font-size: 0.56rem; }
+      .ts-label { font-size: 0.5rem; }
+      .ts-list li { font-size: 0.55rem; padding: 1px 4px; }
+      .ts-list li:nth-child(n+2) { display: none; }
+      .sighting-count-bar { gap: 4px; }
+      .bar-num { font-size: 0.55rem; }
+      footer { padding: 3px 14px; font-size: 0.55rem; }
     }
 
-    /* ── iPad landscape: 3×2 grid, full 6 cards ── */
+    /* ── iPad landscape (768px–1180px): 3×2 grid ── */
     @media (min-width: 768px) and (max-width: 1180px) and (orientation: landscape) {
-      header { padding: 12px 28px 10px; }
-      .site-title { font-size: 1.3rem; }
-      .page-tabs { padding: 0 28px; }
-      .tab-btn { padding: 10px 16px; font-size: 0.7rem; }
-      main { padding: 10px 24px 10px; }
-      .view.active {
-        height: auto;
-        flex: 1;
-        min-height: 0;
-      }
+      header { padding: 10px 24px 8px; }
+      .site-title { font-size: 1.25rem; }
+      .site-subtitle { display: none; }
+      .page-tabs { padding: 0 24px; }
+      .tab-btn { padding: 9px 14px; font-size: 0.68rem; }
+      main { padding: 8px 20px 8px; }
+      .section-label { margin-bottom: 8px; }
       .cards-grid {
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(2, 1fr);
-        gap: 12px;
-        flex: 1;
-        min-height: 0;
+        gap: 10px;
       }
-      .bird-card { min-height: 0; height: 100%; }
-      .card-body { padding: 8px 12px 10px; gap: 5px; }
-      .bird-names .common { font-size: 0.9rem; }
-      footer { padding: 6px 28px; }
+      .card-body { padding: 6px 10px 8px; gap: 4px; }
+      .bird-names .common { font-size: 0.88rem; }
+      footer { padding: 5px 24px; }
     }
 
-    /* ── Desktop medium ── */
-    @media (max-width: 900px) and (orientation: portrait) {
-      /* Handled by portrait overlay — content hidden */
-    }
-
+    /* ── Mid desktop (901–1200px) ── */
     @media (min-width: 901px) and (max-width: 1200px) {
       header { padding: 18px 32px 14px; }
       main { padding: 12px 32px 12px; }
@@ -273,117 +265,33 @@
       .cards-grid { gap: 12px; }
     }
 
-    /* ── Portrait rotate overlay ── */
-    #portrait-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      z-index: 2000;
-      background: var(--green-deep);
-      background-image: radial-gradient(ellipse at 50% 30%, rgba(74,140,82,0.3) 0%, transparent 60%);
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 28px;
-      text-align: center;
-      padding: 40px;
-    }
-    @media (orientation: portrait) and (max-width: 500px) {
-      #portrait-overlay { display: flex; }
-    }
-    .rotate-phone-icon {
-      font-size: 4rem;
-      animation: rotateHint 2s ease-in-out infinite;
-      transform-origin: center;
-    }
-    @keyframes rotateHint {
-      0%   { transform: rotate(0deg); }
-      30%  { transform: rotate(-90deg); }
-      60%  { transform: rotate(-90deg); }
-      80%  { transform: rotate(0deg); }
-      100% { transform: rotate(0deg); }
-    }
-    .portrait-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem; font-weight: 700;
-      color: var(--cream); line-height: 1.3;
-    }
-    .portrait-sub {
-      font-size: 0.82rem; color: var(--green-light);
-      letter-spacing: 0.06em; line-height: 1.6;
-    }
-    .portrait-birds {
-      font-size: 2rem; letter-spacing: 0.2em;
-      animation: floatBirds 3s ease-in-out infinite alternate;
-    }
-    @keyframes floatBirds {
-      from { transform: translateY(0); }
-      to   { transform: translateY(-8px); }
-    }
-
-    /* ── New Bird Alert Overlay ── */
+    /* ── New Bird Alert ── */
     #new-bird-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(10, 25, 14, 0.75);
-      backdrop-filter: blur(6px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(10,25,14,0.75); backdrop-filter: blur(6px);
+      opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
     }
-    #new-bird-overlay.visible {
-      opacity: 1;
-      pointer-events: all;
-    }
+    #new-bird-overlay.visible { opacity: 1; pointer-events: all; }
     .alert-card {
-      background: var(--card-bg);
-      border-radius: 24px;
-      overflow: hidden;
+      background: var(--card-bg); border-radius: 24px; overflow: hidden;
       width: min(480px, 90vw);
       box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 2px var(--amber);
-      transform: scale(0.4);
-      opacity: 0;
-      transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+      transform: scale(0.4); opacity: 0;
+      transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s ease;
       color: var(--text-dark);
     }
-    #new-bird-overlay.visible .alert-card {
-      transform: scale(1);
-      opacity: 1;
-    }
+    #new-bird-overlay.visible .alert-card { transform: scale(1); opacity: 1; }
     .alert-card.dismissing {
-      transform: scale(0.4) !important;
-      opacity: 0 !important;
+      transform: scale(0.4) !important; opacity: 0 !important;
       transition: transform 0.4s ease-in, opacity 0.4s ease-in !important;
     }
-    .alert-banner {
-      background: var(--amber);
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .alert-banner-icon {
-      font-size: 1.6rem;
-      animation: wobble 0.8s ease infinite alternate;
-    }
-    @keyframes wobble {
-      from { transform: rotate(-12deg); }
-      to   { transform: rotate(12deg); }
-    }
+    .alert-banner { background: var(--amber); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    .alert-banner-icon { font-size: 1.6rem; animation: wobble 0.8s ease infinite alternate; }
+    @keyframes wobble { from{transform:rotate(-12deg);}to{transform:rotate(12deg);} }
     .alert-banner-text { flex: 1; }
-    .alert-banner-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.1rem; font-weight: 700;
-      color: #fff; line-height: 1.2;
-    }
-    .alert-banner-sub {
-      font-size: 0.7rem; color: rgba(255,255,255,0.8);
-      letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px;
-    }
+    .alert-banner-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: #fff; line-height: 1.2; }
+    .alert-banner-sub { font-size: 0.7rem; color: rgba(255,255,255,0.8); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
     .alert-dismiss-btn {
       background: rgba(255,255,255,0.25); border: none; border-radius: 50%;
       width: 28px; height: 28px; color: #fff; font-size: 1rem;
@@ -391,12 +299,8 @@
       flex-shrink: 0; transition: background 0.2s;
     }
     .alert-dismiss-btn:hover { background: rgba(255,255,255,0.4); }
-    .alert-img-wrap {
-      height: 260px; overflow: hidden; background: var(--cream-dark);
-    }
-    .alert-img-wrap img {
-      width: 100%; height: 100%; object-fit: cover; object-position: center 15%;
-    }
+    .alert-img-wrap { height: 260px; overflow: hidden; background: var(--cream-dark); }
+    .alert-img-wrap img { width:100%; height:100%; object-fit:cover; object-position:center 15%; }
     .alert-img-wrap .img-placeholder { height: 100%; font-size: 4rem; }
     .alert-body { padding: 20px 24px 24px; }
     .alert-common { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--green-deep); }
@@ -407,15 +311,6 @@
     .alert-countdown-bar { margin-top: 16px; height: 3px; background: var(--cream-dark); border-radius: 2px; overflow: hidden; }
     .alert-countdown-fill { height: 100%; background: var(--amber); width: 100%; transition: width 15s linear; }
     .alert-countdown-fill.go { width: 0%; }
-
-    @media(max-width:900px){
-      .cards-grid{grid-template-columns:repeat(2,1fr);}
-      header,.page-tabs,main{padding-left:20px;padding-right:20px;}
-    }
-    @media(max-width:560px){
-      .cards-grid{grid-template-columns:1fr;}
-      .tab-btn{padding:12px 14px;font-size:0.7rem;}
-    }
   </style>
 </head>
 <body>
