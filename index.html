@@ -114,11 +114,12 @@
     .spinner { width: 38px; height: 38px; border: 3px solid rgba(123,191,130,0.2); border-top-color: var(--green-light); border-radius: 50%; animation: spin 0.9s linear infinite; }
     @keyframes spin { to{transform:rotate(360deg);} }
 
-    /* Cards grid — 3 cols = 6 cards per page, fills full vertical height */
+    /* Cards grid — fills full vertical height */
     .view.active {
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 180px); /* subtract header + tabs + footer */
+      flex: 1;
+      min-height: 0;
     }
     .cards-grid {
       display: grid;
@@ -206,14 +207,25 @@
       .page-tabs { padding: 0 16px; }
       .tab-btn { padding: 7px 10px; font-size: 0.6rem; }
       .tab-btn .tab-icon { margin-right: 3px; }
-      main { padding: 6px 12px 6px; }
-      .section-label { margin-bottom: 5px; font-size: 0.58rem; }
+      main { padding: 6px 12px 4px; }
+      .section-label { margin-bottom: 4px; font-size: 0.58rem; }
+      .view.active {
+        height: auto;
+        flex: 1;
+        min-height: 0;
+      }
       .cards-grid {
         grid-template-columns: repeat(2, 1fr);
         grid-template-rows: 1fr;
         gap: 8px;
+        flex: 1;
+        min-height: 0;
+        align-items: stretch;
       }
-      .view.active { height: calc(100vh - 100px); }
+      .bird-card {
+        min-height: 0;
+        height: 100%;
+      }
       .card-body { padding: 5px 8px 7px; gap: 3px; }
       .bird-names .common { font-size: 0.78rem; }
       .bird-names .scientific { font-size: 0.6rem; }
@@ -231,12 +243,19 @@
       .page-tabs { padding: 0 28px; }
       .tab-btn { padding: 10px 16px; font-size: 0.7rem; }
       main { padding: 10px 24px 10px; }
+      .view.active {
+        height: auto;
+        flex: 1;
+        min-height: 0;
+      }
       .cards-grid {
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(2, 1fr);
         gap: 12px;
+        flex: 1;
+        min-height: 0;
       }
-      .view.active { height: calc(100vh - 130px); }
+      .bird-card { min-height: 0; height: 100%; }
       .card-body { padding: 8px 12px 10px; gap: 5px; }
       .bird-names .common { font-size: 0.9rem; }
       footer { padding: 6px 28px; }
